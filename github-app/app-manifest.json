@@ -1,0 +1,19 @@
+{
+  "name": "ARCHON Architecture Reviewer",
+  "url": "https://archon.dev",
+  "hook_attributes": {
+    "url": "https://github-app.archon.dev/webhooks/github"
+  },
+  "redirect_url": "https://archon.dev/github/callback",
+  "callback_urls": ["https://archon.dev/github/callback"],
+  "setup_url": "https://archon.dev/github/setup",
+  "description": "Autonomous architecture reviews powered by 6 specialist AI agents. Get findings, ADRs, and IaC skeletons on every PR.",
+  "public": true,
+  "default_events": ["pull_request", "installation"],
+  "default_permissions": {
+    "contents": "read",
+    "pull_requests": "write",
+    "issues": "write",
+    "metadata": "read"
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "name": "archon-vscode",
+  "displayName": "ARCHON \u2014 AI Architecture Reviewer",
+  "description": "Run autonomous architecture reviews from VS Code. 6 specialist AI agents analyze your codebase and deliver findings, ADRs, and IaC skeletons.",
+  "version": "0.1.0",
+  "publisher": "archon-ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VenkataAnilKumar/GenAI-Platform"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "architecture",
+    "review",
+    "AI",
+    "security",
+    "cloud"
+  ],
+  "activationEvents": [
+    "onCommand:archon.runReview",
+    "onView:archon-sidebar"
+  ],
+  "main": "./out/extension.js",
+  "icon": "media/icons/archon-icon.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "archon.runReview",
+        "title": "ARCHON: Run Architecture Review",
+        "icon": "$(play)"
+      },
+      {
+        "command": "archon.runDesign",
+        "title": "ARCHON: Run Design Review"
+      },
+      {
+        "command": "archon.selectMode",
+        "title": "ARCHON: Select Review Mode"
+      },
+      {
+        "command": "archon.showFindings",
+        "title": "ARCHON: Show Findings"
+      },
+      {
+        "command": "archon.openSettings",
+        "title": "ARCHON: Open Settings"
+      },
+      {
+        "command": "archon.cancelReview",
+        "title": "ARCHON: Cancel Running Review",
+        "icon": "$(stop)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "archon-sidebar",
+          "title": "ARCHON",
+          "icon": "media/icons/archon-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "archon-sidebar": [
+        {
+          "id": "archon-agents",
+          "name": "Agent Status"
+        },
+        {
+          "id": "archon-findings",
+          "name": "Findings"
+        },
+        {
+          "id": "archon-history",
+          "name": "Review History"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ARCHON",
+      "properties": {
+        "archon.apiUrl": {
+          "type": "string",
+          "default": "https://api.archon.dev",
+          "description": "ARCHON API server URL"
+        },
+        "archon.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "ARCHON API key (from dashboard)",
+          "scope": "application"
+        },
+        "archon.defaultMode": {
+          "type": "string",
+          "default": "review",
+          "enum": [
+            "review",
+            "design",
+            "migration_planner",
+            "compliance_auditor",
+            "due_diligence",
+            "incident_responder",
+            "cost_optimiser",
+            "pr_reviewer",
+            "scaling_advisor",
+            "drift_monitor",
+            "feature_feasibility",
+            "vendor_evaluator",
+            "onboarding_accelerator",
+            "sunset_planner"
+          ],
+          "description": "Default review mode"
+        },
+        "archon.hitlMode": {
+          "type": "string",
+          "default": "balanced",
+          "enum": [
+            "autopilot",
+            "balanced",
+            "supervised"
+          ],
+          "description": "Human-in-the-loop mode"
+        },
+        "archon.autoReviewOnPR": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically run review when PR is opened"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "archon.runReview",
+          "when": "view == archon-agents",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "archon.runReview",
+          "group": "archon"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "dependencies": {
+    "eventsource": "^2.0.2"
+  }
+}

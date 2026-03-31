@@ -1,0 +1,26 @@
+name: Deploy GitHub App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'github-app/**'
+
+defaults:
+  run:
+    working-directory: github-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t archon-github-app .
+
+      - name: Push to registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag archon-github-app ${{ secrets.DOCKER_REGISTRY }}/archon-github-app:latest
+          docker push ${{ secrets.DOCKER_REGISTRY }}/archon-github-app:latest
