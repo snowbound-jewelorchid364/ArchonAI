@@ -1,5 +1,16 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Any
+
+from .cost_optimiser import CostOptimiserInput, build_cost_focus
+from .drift_monitor import DriftInput, build_drift_focus
+from .feature_feasibility import FeatureInput, build_feature_focus
+from .onboarding_accelerator import OnboardingInput, build_onboarding_focus
+from .pr_reviewer import PRReviewInput, build_pr_focus
+from .scaling_advisor import ScalingInput, build_scaling_focus
+from .sunset_planner import SunsetInput, build_sunset_focus
+from .vendor_evaluator import VendorInput, build_vendor_focus
 
 
 @dataclass
@@ -72,7 +83,7 @@ COST_OPTIMISER = ModeConfig(
 PR_REVIEWER = ModeConfig(
     name="pr_reviewer",
     description="Review a pull request for architecture impact",
-    active_agents=["software", "integration"],
+    active_agents=["software"],
     supervisor_focus="change impact -- blockers, warnings, suggestions on the PR diff",
     output_sections=["summary", "blockers", "warnings", "suggestions", "citations"],
 )
@@ -88,7 +99,7 @@ SCALING_ADVISOR = ModeConfig(
 DRIFT_MONITOR = ModeConfig(
     name="drift_monitor",
     description="Weekly architecture drift detection",
-    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
+    active_agents=["cloud", "security"],
     supervisor_focus="drift comparison -- what changed, what was expected, what was not",
     output_sections=["drift_summary", "expected_changes", "unexpected_changes", "stale_adrs", "citations"],
 )
@@ -97,7 +108,7 @@ DRIFT_MONITOR = ModeConfig(
 FEATURE_FEASIBILITY = ModeConfig(
     name="feature_feasibility",
     description="Assess feasibility of a proposed feature against current architecture",
-    active_agents=["software", "data"],
+    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
     supervisor_focus="feasibility verdict -- build/buy/defer, complexity, prerequisites",
     output_sections=["executive_summary", "feasibility_verdict", "complexity_estimate", "prerequisites", "risk_register", "citations"],
 )
@@ -105,7 +116,7 @@ FEATURE_FEASIBILITY = ModeConfig(
 VENDOR_EVALUATOR = ModeConfig(
     name="vendor_evaluator",
     description="Compare vendors or technologies for a specific decision",
-    active_agents=["cloud", "integration", "data"],
+    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
     supervisor_focus="comparison matrix -- TCO, lock-in risk, migration cost",
     output_sections=["executive_summary", "comparison_matrix", "lockin_risk", "tco_analysis", "recommendation", "citations"],
 )
@@ -121,27 +132,9 @@ ONBOARDING_ACCELERATOR = ModeConfig(
 SUNSET_PLANNER = ModeConfig(
     name="sunset_planner",
     description="Plan decommission of a service or component",
-    active_agents=["integration", "data", "security"],
+    active_agents=["integration", "security", "data"],
     supervisor_focus="shutdown sequence -- dependency map, data disposition, compliance",
     output_sections=["executive_summary", "dependency_map", "shutdown_sequence", "data_disposition", "compliance_checklist", "cost_savings", "citations"],
-)
-
-IDEA_MODE = ModeConfig(
-    name="idea_mode",
-    description="Natural language product idea to complete architecture, no technical knowledge needed",
-    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
-    supervisor_focus="prescriptive multi-option -- generate Lean/Scalable/Enterprise options within constraints",
-    output_sections=[
-        "executive_summary",
-        "product_summary",
-        "architecture_options",
-        "recommended_option",
-        "what_to_build_first",
-        "adrs",
-        "diagrams",
-        "plain_english_glossary",
-        "citations",
-    ],
 )
 
 IDEA_MODE = ModeConfig(
@@ -187,3 +180,23 @@ def get_mode(name: str) -> ModeConfig:
         available = ", ".join(sorted(ALL_MODES))
         raise ValueError(f"Unknown mode: {name!r}. Available: {available}")
     return ALL_MODES[name]
+
+
+def build_mode_focus(mode: str, payload: dict[str, Any]) -> str:
+    if mode == "cost_optimiser":
+        return build_cost_focus(CostOptimiserInput(**payload))
+    if mode == "pr_reviewer":
+        return build_pr_focus(PRReviewInput(**payload))
+    if mode == "scaling_advisor":
+        return build_scaling_focus(ScalingInput(**payload))
+    if mode == "drift_monitor":
+        return build_drift_focus(DriftInput(**payload))
+    if mode == "feature_feasibility":
+        return build_feature_focus(FeatureInput(**payload))
+    if mode == "vendor_evaluator":
+        return build_vendor_focus(VendorInput(**payload))
+    if mode == "onboarding_accelerator":
+        return build_onboarding_focus(OnboardingInput(**payload))
+    if mode == "sunset_planner":
+        return build_sunset_focus(SunsetInput(**payload))
+    return ""

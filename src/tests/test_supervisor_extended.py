@@ -1,8 +1,9 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from archon.engine.supervisor import Supervisor, AGENT_REGISTRY, MODE_HITL_OVERRIDES, MODE_HITL_MINIMUM
-from archon.engine.modes.configs import get_mode, ALL_MODES
+from unittest.mock import MagicMock
+
 from archon.engine.hitl.checkpoints import HITLMode
+from archon.engine.modes.configs import ALL_MODES, get_mode
+from archon.engine.supervisor import AGENT_REGISTRY, MODE_HITL_MINIMUM, MODE_HITL_OVERRIDES, Supervisor
 
 
 def _make_supervisor():
@@ -25,11 +26,11 @@ class TestSupervisorBuildAgents:
         agents = sup._build_agents(mode_config)
         assert len(agents) == 2
 
-    def test_pr_reviewer_builds_2(self):
+    def test_pr_reviewer_builds_1(self):
         sup = _make_supervisor()
         mode_config = get_mode("pr_reviewer")
         agents = sup._build_agents(mode_config)
-        assert len(agents) == 2
+        assert len(agents) == 1
 
     def test_all_modes_build_agents(self):
         sup = _make_supervisor()

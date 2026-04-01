@@ -1,20 +1,26 @@
 from __future__ import annotations
+
 import asyncio
 import logging
 import time
 import uuid
+
 from ..agents import (
-    SoftwareArchitectAgent, CloudArchitectAgent, SecurityArchitectAgent,
-    DataArchitectAgent, IntegrationArchitectAgent, AiArchitectAgent,
+    AiArchitectAgent,
+    CloudArchitectAgent,
+    DataArchitectAgent,
+    IntegrationArchitectAgent,
+    SecurityArchitectAgent,
+    SoftwareArchitectAgent,
 )
-from ..core.models import AgentOutput, ReviewPackage, Finding
+from ..config.settings import settings
+from ..core.models import AgentOutput, Finding, ReviewPackage
 from ..core.ports.llm_port import LLMPort
 from ..core.ports.search_port import SearchPort
 from ..rag.retriever import RAGRetriever
-from ..config.settings import settings
-from .modes.configs import get_mode, ModeConfig
-from .hitl.checkpoints import HITLMode, CheckpointType
+from .hitl.checkpoints import CheckpointType, HITLMode
 from .hitl.session import HITLSession
+from .modes.configs import ModeConfig, get_mode
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +33,10 @@ AGENT_REGISTRY: dict[str, type] = {
     "ai": AiArchitectAgent,
 }
 
-# Per-mode HITL overrides: Incident = no checkpoints (speed), Due Diligence = all
 MODE_HITL_OVERRIDES: dict[str, HITLMode] = {
     "incident_responder": HITLMode.AUTOPILOT,
 }
 
-# Modes that FORCE full supervised regardless of user choice
 MODE_HITL_MINIMUM: dict[str, HITLMode] = {
     "due_diligence": HITLMode.SUPERVISED,
     "compliance_auditor": HITLMode.BALANCED,
@@ -74,6 +78,7 @@ class Supervisor:
         on_checkpoint: object = None,
         memory_context: str = "",
         connector_context: str = "",
+        mode_focus_override: str = "",
     ) -> ReviewPackage:
         run_id = job_id or str(uuid.uuid4())
         start = time.monotonic()
@@ -82,14 +87,16 @@ class Supervisor:
         effective_hitl = self._resolve_hitl(mode, hitl_mode)
         session = HITLSession(job_id=run_id, hitl_mode=effective_hitl)
 
-        # Build only the agents this mode needs
         agents = self._build_agents(mode_config)
         logger.info(
             "Supervisor starting | run=%s | mode=%s | agents=%s | thinking=%s | hitl=%s",
-            run_id, mode, [a.domain for a in agents], thinking_budget, effective_hitl.value,
+            run_id,
+            mode,
+            [a.domain for a in agents],
+            thinking_budget,
+            effective_hitl.value,
         )
 
-        # --- Checkpoint: AGENTS_STARTED ---
         if session.needs_checkpoint(CheckpointType.AGENTS_STARTED):
             cp = session.record_checkpoint(
                 CheckpointType.AGENTS_STARTED,
@@ -100,23 +107,48 @@ class Supervisor:
             else:
                 await session.wait_for_approval(cp)
 
-        # Fan out only active agents in parallel, passing mode focus as context
-        context_parts = [c for c in [memory_context, connector_context, mode_config.supervisor_focus] if c]
+        context_parts = [
+            c
+            for c in [memory_context, connector_context, mode_config.supervisor_focus, mode_focus_override]
+            if c
+        ]
         effective_focus = "\n\n".join(context_parts)
-        results = await asyncio.gather(
-            *[agent.run(mode, mode_focus=effective_focus) for agent in agents],
-            return_exceptions=True,
-        )
+
+        if mode == "pr_reviewer" and agents:
+            try:
+                results: list[AgentOutput | Exception] = [
+                    await asyncio.wait_for(agents[0].run(mode, mode_focus=effective_focus), timeout=90)
+                ]
+            except asyncio.TimeoutError:
+                results = [
+                    AgentOutput(
+                        domain=agents[0].domain,
+                        confidence=0.0,
+                        duration_seconds=90.0,
+                        error="PR review timed out at 90s",
+                        partial=True,
+                    )
+                ]
+        else:
+            results = await asyncio.gather(
+                *[agent.run(mode, mode_focus=effective_focus) for agent in agents],
+                return_exceptions=True,
+            )
 
         outputs: list[AgentOutput] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                agent_name = agents[i].domain
+                agent_name = agents[i].domain if i < len(agents) else "unknown"
                 logger.error("Agent %s raised: %s", agent_name, result)
-                outputs.append(AgentOutput(
-                    domain=agent_name, confidence=0.0, duration_seconds=0.0,
-                    error=str(result), partial=True,
-                ))
+                outputs.append(
+                    AgentOutput(
+                        domain=agent_name,
+                        confidence=0.0,
+                        duration_seconds=0.0,
+                        error=str(result),
+                        partial=True,
+                    )
+                )
             else:
                 outputs.append(result)
 
@@ -129,7 +161,6 @@ class Supervisor:
         }
         is_partial = any(o.partial or o.error for o in outputs)
 
-        # --- Checkpoint: FINDINGS_READY ---
         if session.needs_checkpoint(CheckpointType.FINDINGS_READY):
             cp = session.record_checkpoint(
                 CheckpointType.FINDINGS_READY,
@@ -159,7 +190,6 @@ class Supervisor:
             model_version=settings.agent_model,
         )
 
-        # --- Checkpoint: PACKAGE_READY ---
         if session.needs_checkpoint(CheckpointType.PACKAGE_READY):
             cp = session.record_checkpoint(
                 CheckpointType.PACKAGE_READY,
@@ -174,16 +204,16 @@ class Supervisor:
 
     def _deduplicate(self, findings: list[Finding]) -> list[Finding]:
         seen: dict[str, Finding] = {}
-        for f in findings:
-            key = f"{f.severity.value}:{f.title.lower()[:60]}"
+        for finding in findings:
+            key = f"{finding.severity.value}:{finding.title.lower()[:60]}"
             if key not in seen:
-                seen[key] = f
+                seen[key] = finding
         return list(seen.values())
 
     async def _write_summary(self, findings: list[Finding], mode_config: ModeConfig, repo_url: str) -> str:
-        critical = sum(1 for f in findings if f.severity.value == "CRITICAL")
-        high = sum(1 for f in findings if f.severity.value == "HIGH")
-        top_titles = "; ".join(f.title for f in findings[:5])
+        critical = sum(1 for finding in findings if finding.severity.value == "CRITICAL")
+        high = sum(1 for finding in findings if finding.severity.value == "HIGH")
+        top_titles = "; ".join(finding.title for finding in findings[:5])
         prompt = (
             f"You are the ARCHON supervisor. Write a concise executive summary (max 300 words) "
             f"for a {mode_config.name} architecture review of {repo_url}.\n\n"
@@ -197,12 +227,8 @@ class Supervisor:
         try:
             return await self._llm.complete(
                 "You are an expert architect creating executive summaries.",
-                prompt, thinking_budget="low",
+                prompt,
+                thinking_budget="low",
             )
         except Exception:
             return f"Review complete. {len(findings)} findings ({critical} critical, {high} high)."
-
-
-
-
-

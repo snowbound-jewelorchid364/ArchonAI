@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -34,7 +34,7 @@ def _package(partial: bool = False) -> ReviewPackage:
 
 @pytest.mark.asyncio
 async def test_runner_status_completed_on_success() -> None:
-    supervisor = AsyncMock()
+    supervisor = MagicMock()
     supervisor.run = AsyncMock(return_value=_package(partial=False))
     runner = Runner(supervisor)
 
@@ -47,7 +47,7 @@ async def test_runner_status_completed_on_success() -> None:
 
 @pytest.mark.asyncio
 async def test_runner_status_failed_on_exception() -> None:
-    supervisor = AsyncMock()
+    supervisor = MagicMock()
     supervisor.run = AsyncMock(side_effect=RuntimeError("boom"))
     runner = Runner(supervisor)
 
@@ -57,7 +57,7 @@ async def test_runner_status_failed_on_exception() -> None:
 
 @pytest.mark.asyncio
 async def test_runner_status_partial_when_supervisor_returns_partial_package() -> None:
-    supervisor = AsyncMock()
+    supervisor = MagicMock()
     supervisor.run = AsyncMock(return_value=_package(partial=True))
     runner = Runner(supervisor)
 
@@ -73,7 +73,7 @@ async def test_runner_status_partial_when_supervisor_returns_partial_package() -
 
 @pytest.mark.asyncio
 async def test_runner_handles_timeout_as_failure_when_not_converted_upstream() -> None:
-    supervisor = AsyncMock()
+    supervisor = MagicMock()
     supervisor.run = AsyncMock(side_effect=TimeoutError("timeout"))
     runner = Runner(supervisor)
 

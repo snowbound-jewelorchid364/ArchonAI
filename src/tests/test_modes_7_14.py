@@ -11,7 +11,7 @@ import pytest
 from datetime import datetime
 
 from archon.engine.modes.configs import ALL_MODES, get_mode, ModeConfig
-from archon.output.formatter import MarkdownFormatter
+from archon.output.formatter import MarkdownFormatter, format_package
 from archon.core.models import ReviewPackage, Finding, Severity, Citation, Artifact, ArtifactType
 from archon.infrastructure.tools.diff_analyzer import DiffAnalyzer, DiffSummary, FileDiff
 from archon.infrastructure.tools.drift_detector import DriftDetector, DriftReport, DriftItem
@@ -83,7 +83,8 @@ class TestModeConfigs:
             cfg = get_mode(mode_name)
             assert cfg.name == mode_name
             assert len(cfg.description) > 10
-            assert len(cfg.active_agents) >= 2
+            min_agents = 1 if mode_name == "pr_reviewer" else 2
+            assert len(cfg.active_agents) >= min_agents
             assert len(cfg.supervisor_focus) > 10
             assert len(cfg.output_sections) >= 4
 
@@ -101,9 +102,9 @@ class TestModeConfigs:
         assert "data" in cfg.active_agents
         assert "cloud" in cfg.active_agents
 
-    def test_drift_monitor_uses_all_agents(self):
+    def test_drift_monitor_uses_cloud_and_security(self):
         cfg = get_mode("drift_monitor")
-        assert len(cfg.active_agents) == 6
+        assert cfg.active_agents == ["cloud", "security"]
 
     def test_onboarding_uses_all_agents(self):
         cfg = get_mode("onboarding_accelerator")
@@ -125,67 +126,65 @@ class TestFormatterSections:
             assert "# ARCHON" in output
             assert len(output) > 100
 
-    def test_cost_optimiser_sections(self, formatter, sample_package):
+    def test_cost_optimiser_sections(self, sample_package):
         sample_package.mode = "cost_optimiser"
-        output = formatter.format(sample_package)
-        assert "## Savings Opportunities" in output
-        assert "## Effort vs Savings Matrix" in output
-        assert "## IaC Quick Wins" in output
-        assert "## Cost Projection" in output
+        output = format_package(sample_package)
+        assert "## Cost Optimiser Report" in output
+        assert "### Top Savings Opportunities" in output
+        assert "### Quick Wins" in output
+        assert "### IaC Changes" in output
 
-    def test_pr_reviewer_sections(self, formatter, sample_package):
+    def test_pr_reviewer_sections(self, sample_package):
         sample_package.mode = "pr_reviewer"
-        output = formatter.format(sample_package)
-        assert "## Summary" in output
-        assert "## Blockers" in output
-        assert "## Warnings" in output
-        assert "## Suggestions" in output
+        output = format_package(sample_package)
+        assert "## PR Review" in output
+        assert "### \U0001F6AB Blockers" in output
+        assert "### \u26A0\uFE0F Warnings" in output
+        assert "### \U0001F4A1 Suggestions" in output
 
-    def test_scaling_advisor_sections(self, formatter, sample_package):
+    def test_scaling_advisor_sections(self, sample_package):
         sample_package.mode = "scaling_advisor"
-        output = formatter.format(sample_package)
-        assert "## Bottleneck Ranking" in output
-        assert "## Scaling Strategy" in output
-        assert "## Load Test Plan" in output
+        output = format_package(sample_package)
+        assert "## Scaling Advisor Report" in output
+        assert "### Bottleneck Ranking" in output
+        assert "### Auto-Scaling IaC" in output
 
-    def test_drift_monitor_sections(self, formatter, sample_package):
+    def test_drift_monitor_sections(self, sample_package):
         sample_package.mode = "drift_monitor"
-        output = formatter.format(sample_package)
-        assert "## Drift Summary" in output
-        assert "## Expected Changes" in output
-        assert "## Unexpected Changes" in output
+        output = format_package(sample_package)
+        assert "## Architecture Drift Report" in output
+        assert "### New Components" in output
+        assert "### Changed Interfaces" in output
 
-    def test_feature_feasibility_sections(self, formatter, sample_package):
+    def test_feature_feasibility_sections(self, sample_package):
         sample_package.mode = "feature_feasibility"
-        output = formatter.format(sample_package)
-        assert "## Feasibility Verdict" in output
-        assert "## Complexity Estimate" in output
-        assert "## Prerequisites" in output
+        output = format_package(sample_package)
+        assert "## Feature Feasibility Report" in output
+        assert "### Verdict" in output
+        assert "### Complexity" in output
 
-    def test_vendor_evaluator_sections(self, formatter, sample_package):
+    def test_vendor_evaluator_sections(self, sample_package):
         sample_package.mode = "vendor_evaluator"
-        output = formatter.format(sample_package)
-        assert "## Comparison Matrix" in output
-        assert "## Lock-in Risk Register" in output
-        assert "## Total Cost of Ownership" in output
+        output = format_package(sample_package)
+        assert "## Vendor Evaluation Report" in output
+        assert "### Evaluation Matrix" in output
+        assert "### Lock-In Risk Assessment" in output
 
-    def test_onboarding_sections(self, formatter, sample_package):
+    def test_onboarding_sections(self, sample_package):
         sample_package.mode = "onboarding_accelerator"
-        output = formatter.format(sample_package)
-        assert "## System Map" in output
-        assert "## Learning Path" in output
-        assert "## Glossary" in output
-        assert "## Known Landmines" in output
+        output = format_package(sample_package)
+        assert "## Onboarding Guide" in output
+        assert "### System Map" in output
+        assert "### Known Landmines" in output
 
-    def test_sunset_planner_sections(self, formatter, sample_package):
+    def test_sunset_planner_sections(self, sample_package):
         sample_package.mode = "sunset_planner"
-        output = formatter.format(sample_package)
-        assert "## Dependency Map" in output
-        assert "## Shutdown Sequence" in output
-        assert "## Data Disposition Plan" in output
-        assert "## Compliance Checklist" in output
+        output = format_package(sample_package)
+        assert "## Sunset Plan" in output
+        assert "### Dependency Map" in output
+        assert "### GDPR Deletion Checklist" in output
 
-    def test_feasibility_verdict_defer(self, formatter, sample_package):
+    def test_feasibility_verdict_defer(self, sample_package):
         """3+ CRITICAL findings should produce DEFER verdict."""
         sample_package.mode = "feature_feasibility"
         sample_package.findings = [
@@ -194,19 +193,19 @@ class TestFormatterSections:
                     recommendation="Fix", confidence=0.9, from_codebase=True)
             for i in range(4)
         ]
-        output = formatter.format(sample_package)
+        output = format_package(sample_package)
         assert "DEFER" in output
 
-    def test_complexity_estimate_xl(self, formatter, sample_package):
+    def test_complexity_estimate_xl(self, sample_package):
         """Many findings should produce XL complexity."""
         sample_package.mode = "feature_feasibility"
         sample_package.findings = [
             Finding(id=f"F-{i}", title=f"Finding {i}", description="Issue",
-                    severity=Severity.CRITICAL, domain="test",
+                    severity=Severity.HIGH, domain="test",
                     recommendation="Fix", confidence=0.9, from_codebase=True)
-            for i in range(5)
+            for i in range(21)
         ]
-        output = formatter.format(sample_package)
+        output = format_package(sample_package)
         assert "XL" in output
 
     def test_migration_planner_sections(self, formatter, sample_package):
@@ -423,3 +422,8 @@ class TestVendorComparator:
         result = comparator.compare(vendors)
         assert result.recommended == "Solo"
         assert result.recommendation_rationale == ""
+
+
+
+
+

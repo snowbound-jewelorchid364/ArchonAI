@@ -24,7 +24,7 @@ def _output(domain: str) -> AgentOutput:
 
 @pytest.mark.asyncio
 async def test_supervised_mode_checkpoints_fire_in_order() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 
@@ -59,7 +59,7 @@ async def test_supervised_mode_checkpoints_fire_in_order() -> None:
 
 @pytest.mark.asyncio
 async def test_supervised_path_continues_after_each_checkpoint_approval() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 
@@ -88,7 +88,7 @@ async def test_supervised_path_continues_after_each_checkpoint_approval() -> Non
 
 @pytest.mark.asyncio
 async def test_veto_callback_stops_run_before_package() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 
@@ -112,7 +112,7 @@ async def test_veto_callback_stops_run_before_package() -> None:
 
 @pytest.mark.asyncio
 async def test_autopilot_mode_fires_no_checkpoints() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 

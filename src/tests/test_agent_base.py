@@ -41,7 +41,7 @@ class FailingAgent(BaseArchitectAgent):
 class TestBaseArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_returns_output(self, mock_llm, mock_searcher):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = ConcreteAgent(mock_llm, [mock_searcher], retriever)
@@ -52,7 +52,7 @@ class TestBaseArchitectAgent:
 
     @pytest.mark.asyncio
     async def test_run_timeout_returns_partial(self, mock_llm, mock_searcher):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = SlowAgent(mock_llm, [mock_searcher], retriever)
@@ -63,7 +63,7 @@ class TestBaseArchitectAgent:
 
     @pytest.mark.asyncio
     async def test_run_exception_returns_partial(self, mock_llm, mock_searcher):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = FailingAgent(mock_llm, [mock_searcher], retriever)
@@ -73,11 +73,11 @@ class TestBaseArchitectAgent:
 
     @pytest.mark.asyncio
     async def test_search_collects_from_multiple_searchers(self, mock_llm):
-        s1 = AsyncMock()
+        s1 = MagicMock()
         s1.search = AsyncMock(return_value=["result1"])
-        s2 = AsyncMock()
+        s2 = MagicMock()
         s2.search = AsyncMock(return_value=["result2"])
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = ConcreteAgent(mock_llm, [s1, s2], retriever)
@@ -86,9 +86,9 @@ class TestBaseArchitectAgent:
 
     @pytest.mark.asyncio
     async def test_search_handles_failure(self, mock_llm):
-        s1 = AsyncMock()
+        s1 = MagicMock()
         s1.search = AsyncMock(side_effect=Exception("API down"))
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = ConcreteAgent(mock_llm, [s1], retriever)
@@ -96,7 +96,7 @@ class TestBaseArchitectAgent:
         assert results == []
 
     def test_load_prompt_fallback(self, mock_llm, mock_searcher):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         agent = ConcreteAgent(mock_llm, [mock_searcher], retriever)

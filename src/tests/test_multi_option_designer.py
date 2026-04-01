@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import pytest
 from datetime import datetime, UTC
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from archon.core.models.review_package import ReviewPackage
 from archon.engine.requirements_translator import TechnicalConstraints
 from archon.engine.multi_option_designer import ArchitectureOption, generate_options
@@ -39,7 +39,7 @@ def _make_constraints():
 
 @pytest.mark.asyncio
 async def test_generates_three_options():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value=THREE_OPTIONS_JSON)
     options = await generate_options(_make_package(), _make_constraints(), mock_llm)
     assert len(options) == 3
@@ -48,7 +48,7 @@ async def test_generates_three_options():
 
 @pytest.mark.asyncio
 async def test_option_ids_correct():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value=THREE_OPTIONS_JSON)
     options = await generate_options(_make_package(), _make_constraints(), mock_llm)
     ids = {o.id for o in options}
@@ -57,7 +57,7 @@ async def test_option_ids_correct():
 
 @pytest.mark.asyncio
 async def test_lean_cheaper_than_enterprise():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value=THREE_OPTIONS_JSON)
     options = await generate_options(_make_package(), _make_constraints(), mock_llm)
     by_id = {o.id: o for o in options}

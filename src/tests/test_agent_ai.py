@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from archon.agents.ai_architect import AiArchitectAgent
 from archon.core.models.agent_output import AgentOutput
 from archon.rag.retriever import RAGRetriever
@@ -23,7 +23,7 @@ def _mock_response():
 
 class TestAiArchitectAgent:
     def test_domain(self, mock_llm, mock_searcher):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = AiArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         assert agent.domain == "ai-architect"
@@ -31,7 +31,7 @@ class TestAiArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_returns_output(self, mock_llm, mock_searcher):
         mock_llm.complete.return_value = _mock_response()
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = AiArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("review")
@@ -42,7 +42,7 @@ class TestAiArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_with_focus(self, mock_llm, mock_searcher):
         mock_llm.complete.return_value = _mock_response()
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = AiArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("review", mode_focus="test focus")
@@ -51,7 +51,7 @@ class TestAiArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_error_returns_partial(self, mock_llm, mock_searcher):
         mock_llm.complete.side_effect = RuntimeError("API error")
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = AiArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("review")
@@ -61,7 +61,7 @@ class TestAiArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_empty_findings(self, mock_llm, mock_searcher):
         mock_llm.complete.return_value = json.dumps({"findings": [], "artifacts": [], "confidence": 0.5})
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = AiArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("design")

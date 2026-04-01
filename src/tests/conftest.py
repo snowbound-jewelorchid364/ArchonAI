@@ -86,29 +86,29 @@ def partial_package(sample_findings):
 
 @pytest.fixture
 def mock_llm():
-    llm = AsyncMock()
-    llm.complete.return_value = '{"findings": [], "artifacts": [], "confidence": 0.7}'
+    llm = MagicMock()
+    llm.complete = AsyncMock(return_value='{"findings": [], "artifacts": [], "confidence": 0.7}')
     return llm
 
 
 @pytest.fixture
 def mock_searcher():
-    s = AsyncMock()
-    s.search.return_value = []
+    s = MagicMock()
+    s.search = AsyncMock(return_value=[])
     return s
 
 
 @pytest.fixture
 def mock_repo_reader():
-    r = AsyncMock()
-    r.get_files.return_value = [
+    r = MagicMock()
+    r.get_files = AsyncMock(return_value=[
         RepoFile(path="main.py", content="import os\nSECRET = 'hardcoded'\nprint(SECRET)", size_bytes=50),
         RepoFile(path="api.py", content="from flask import Flask\napp = Flask(__name__)\n@app.route('/')\ndef index():\n    return 'ok'", size_bytes=90),
         RepoFile(path="requirements.txt", content="flask==2.0.0\nrequests==2.28.0", size_bytes=30),
-    ]
-    r.count_loc.return_value = 150
-    r.clone.return_value = "/tmp/archon-test"
-    r.cleanup.return_value = None
+    ])
+    r.count_loc = AsyncMock(return_value=150)
+    r.clone = AsyncMock(return_value="/tmp/archon-test")
+    r.cleanup = AsyncMock(return_value=None)
     return r
 
 

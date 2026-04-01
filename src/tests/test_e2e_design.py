@@ -56,7 +56,7 @@ def _artifact_set() -> list[Artifact]:
 
 @pytest.mark.asyncio
 async def test_e2e_design_pipeline_brief_produces_adrs_and_diagram() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Design summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 

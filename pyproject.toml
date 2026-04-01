@@ -20,6 +20,7 @@ dependencies = [
     "numpy>=1.26.0",
     "python-dotenv>=1.0.0",
     "jinja2>=3.1.0",
+    "apscheduler>=3.10.4",
     "gitpython>=3.1.0",
 ]
 
@@ -63,5 +64,3 @@ testpaths = ["src/tests"]
 python_version = "3.11"
 strict = false
 ignore_missing_imports = true
-
-

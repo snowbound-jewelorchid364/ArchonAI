@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from archon.agents.software_architect import SoftwareArchitectAgent
 from archon.core.models.agent_output import AgentOutput
 from archon.rag.retriever import RAGRetriever
@@ -29,7 +29,7 @@ def _mock_response(findings_count=1):
 
 @pytest.fixture
 def sw_agent(mock_llm, mock_searcher):
-    store = AsyncMock()
+    store = MagicMock()
     store.query = AsyncMock(return_value=[])
     retriever = RAGRetriever(store)
     mock_llm.complete.return_value = _mock_response()
@@ -55,7 +55,7 @@ class TestSoftwareArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_empty_findings(self, mock_llm, mock_searcher):
         mock_llm.complete.return_value = json.dumps({"findings": [], "artifacts": [], "confidence": 0.5})
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = SoftwareArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("design")
@@ -64,7 +64,7 @@ class TestSoftwareArchitectAgent:
     @pytest.mark.asyncio
     async def test_run_llm_error(self, mock_llm, mock_searcher):
         mock_llm.complete.side_effect = RuntimeError("LLM down")
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = SoftwareArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("review")
@@ -74,7 +74,7 @@ class TestSoftwareArchitectAgent:
     @pytest.mark.asyncio
     async def test_multiple_findings(self, mock_llm, mock_searcher):
         mock_llm.complete.return_value = _mock_response(3)
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         agent = SoftwareArchitectAgent(mock_llm, [mock_searcher], RAGRetriever(store))
         output = await agent.run("review")

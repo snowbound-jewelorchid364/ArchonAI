@@ -24,7 +24,7 @@ def _ok_output(domain: str) -> AgentOutput:
 
 @pytest.mark.asyncio
 async def test_supervisor_partial_output_when_one_agent_raises() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 

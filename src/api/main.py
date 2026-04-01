@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import health, reviews, jobs, packages, webhooks, billing, share, feedback, history, chat, inputs, intake, memory, health_score, connectors
+from .routes import health, reviews, jobs, packages, webhooks, billing, share, feedback, history, chat, inputs, intake, memory, health_score, connectors, cost_optimiser
 from .middleware.auth import AuthMiddleware
 from .middleware.rate_limit import RateLimitMiddleware
 
@@ -69,7 +69,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(intake.router, prefix="/intake", tags=["intake"])
     api_v1.include_router(memory.router)           # has own prefix="/memory"
     api_v1.include_router(health_score.router)     # has own prefix="/health-score"
-    api_v1.include_router(connectors.router)       # has own prefix="/connectors"
+    api_v1.include_router(connectors.router)       # has own prefix="/connectors"`r`n    api_v1.include_router(cost_optimiser.router)   # has own prefix="/cost-optimiser"
 
     app.include_router(api_v1)
 
@@ -77,6 +77,7 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
 
 
 

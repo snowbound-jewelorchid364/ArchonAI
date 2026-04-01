@@ -1,19 +1,26 @@
 """ARCHON GitHub App - Webhook handler for PR reviews."""
+from __future__ import annotations
+
 import hashlib
 import hmac
 import logging
 import os
+import time
 from typing import Any
 
 import httpx
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
+
+from archon.core.models import ReviewPackage
+from archon.output.sections.pr_reviewer import render_pr_github_comment
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ARCHON GitHub App", version="0.1.0")
 
 from .callback import router as callback_router
+
 app.include_router(callback_router)
 
 
@@ -23,7 +30,6 @@ ARCHON_INTERNAL_KEY = os.getenv("ARCHON_INTERNAL_KEY", "")
 
 
 class PREvent(BaseModel):
-    """Parsed pull request event."""
     action: str
     repo_full_name: str
     repo_url: str
@@ -35,7 +41,6 @@ class PREvent(BaseModel):
 
 
 def verify_signature(payload: bytes, signature: str) -> bool:
-    """Verify GitHub webhook signature (HMAC-SHA256)."""
     if not GITHUB_WEBHOOK_SECRET:
         logger.warning("GITHUB_WEBHOOK_SECRET not set - skipping verification")
         return True
@@ -49,7 +54,6 @@ def verify_signature(payload: bytes, signature: str) -> bool:
 
 
 def parse_pr_event(payload: dict[str, Any]) -> PREvent | None:
-    """Parse a pull_request webhook payload."""
     action = payload.get("action", "")
     if action not in ("opened", "synchronize", "reopened"):
         return None
@@ -70,21 +74,14 @@ def parse_pr_event(payload: dict[str, Any]) -> PREvent | None:
     )
 
 
-async def trigger_pr_review(event: PREvent) -> str:
-    """Trigger an ARCHON PR review via the API."""
+async def trigger_pr_review(event: PREvent, pr_diff: str) -> tuple[str, str]:
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{ARCHON_API_URL}/api/v1/reviews",
             json={
                 "repo_url": event.repo_url,
                 "mode": "pr_reviewer",
-                "hitl_mode": "autopilot",
-                "metadata": {
-                    "pr_number": event.pr_number,
-                    "pr_branch": event.pr_branch,
-                    "base_branch": event.base_branch,
-                    "installation_id": event.installation_id,
-                },
+                "brief": f"PR title: {event.pr_title}\n\nPR diff:\n{pr_diff[:20000]}",
             },
             headers={
                 "Authorization": f"Bearer {ARCHON_INTERNAL_KEY}",
@@ -94,39 +91,62 @@ async def trigger_pr_review(event: PREvent) -> str:
         )
         resp.raise_for_status()
         data = resp.json()
-        return data.get("job_id", "unknown")
+        return data.get("review_id", ""), data.get("job_id", "")
+
+
+async def fetch_pr_diff(installation_id: int, repo_full_name: str, pr_number: int) -> str:
+    token = await get_installation_token(installation_id)
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"https://api.github.com/repos/{repo_full_name}/pulls/{pr_number}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github.v3.diff",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=30.0,
+        )
+        resp.raise_for_status()
+        return resp.text
+
+
+async def wait_for_review_result(review_id: str, job_id: str, timeout_seconds: int = 120) -> dict[str, Any] | None:
+    deadline = time.monotonic() + timeout_seconds
+    async with httpx.AsyncClient() as client:
+        while time.monotonic() < deadline:
+            status_resp = await client.get(
+                f"{ARCHON_API_URL}/api/v1/jobs/{job_id}/status",
+                headers={"Authorization": f"Bearer {ARCHON_INTERNAL_KEY}"},
+                timeout=15.0,
+            )
+            if status_resp.status_code == 200:
+                status_data = status_resp.json()
+                if status_data.get("status") in {"COMPLETED", "PARTIAL", "FAILED"}:
+                    break
+            await asyncio_sleep(3)
+
+        review_resp = await client.get(
+            f"{ARCHON_API_URL}/api/v1/reviews/{review_id}",
+            headers={"Authorization": f"Bearer {ARCHON_INTERNAL_KEY}"},
+            timeout=20.0,
+        )
+        if review_resp.status_code != 200:
+            return None
+        return review_resp.json()
+
+
+async def asyncio_sleep(seconds: int) -> None:
+    import asyncio
+
+    await asyncio.sleep(seconds)
 
 
 async def post_review_comment(
     installation_id: int,
     repo_full_name: str,
     pr_number: int,
-    findings: list[dict],
+    body: str,
 ) -> None:
-    """Post review findings as a PR comment."""
-    severity_emoji = {
-        "CRITICAL": "\U0001f534",
-        "HIGH": "\U0001f7e0",
-        "MEDIUM": "\U0001f7e1",
-        "LOW": "\U0001f7e2",
-        "INFO": "\U0001f535",
-    }
-
-    lines = ["## ARCHON Architecture Review\n"]
-    lines.append(f"Found **{len(findings)}** findings:\n")
-
-    for f in findings:
-        emoji = severity_emoji.get(f.get("severity", "INFO"), "")
-        lines.append(f"- {emoji} **{f.get('severity')}**: {f.get('title')}")
-        if f.get("file"):
-            lines.append(f"  - File: `{f['file']}`")
-        lines.append(f"  - {f.get('recommendation', '')}")
-        lines.append("")
-
-    lines.append("\n---\n*Powered by [ARCHON](https://archon.dev)*")
-
-    body = "\n".join(lines)
-
     token = await get_installation_token(installation_id)
     async with httpx.AsyncClient() as client:
         await client.post(
@@ -142,9 +162,7 @@ async def post_review_comment(
 
 
 async def get_installation_token(installation_id: int) -> str:
-    """Get GitHub App installation token using JWT."""
     import jwt
-    import time
 
     app_id = os.getenv("GITHUB_APP_ID", "")
     private_key = os.getenv("GITHUB_APP_PRIVATE_KEY", "")
@@ -171,15 +189,12 @@ async def get_installation_token(installation_id: int) -> str:
 
 
 @app.get("/health")
-async def health():
-    """Health check endpoint."""
+async def health() -> dict[str, str]:
     return {"status": "ok", "app": "archon-github-app"}
 
 
 @app.post("/webhooks/github")
-async def github_webhook(request: Request):
-    """Handle GitHub webhook events."""
-    # Verify signature
+async def github_webhook(request: Request) -> dict[str, str]:
     signature = request.headers.get("X-Hub-Signature-256", "")
     payload_bytes = await request.body()
 
@@ -192,19 +207,43 @@ async def github_webhook(request: Request):
     if event_type == "pull_request":
         event = parse_pr_event(payload)
         if event:
-            logger.info(
-                f"PR event: {event.action} #{event.pr_number} on {event.repo_full_name}"
-            )
+            logger.info("PR event: %s #%s on %s", event.action, event.pr_number, event.repo_full_name)
             try:
-                job_id = await trigger_pr_review(event)
-                return {"status": "review_triggered", "job_id": job_id}
-            except Exception as e:
-                logger.error(f"Failed to trigger review: {e}")
-                raise HTTPException(status_code=500, detail=str(e))
+                pr_diff = await fetch_pr_diff(event.installation_id, event.repo_full_name, event.pr_number)
+                review_id, job_id = await trigger_pr_review(event, pr_diff)
+                review_detail = await wait_for_review_result(review_id, job_id, timeout_seconds=120)
+
+                if review_detail is None:
+                    timeout_body = (
+                        "## ARCHON PR Review\n\n"
+                        "Review timed out after 2 minutes. Partial analysis may still complete in ARCHON."
+                    )
+                    await post_review_comment(event.installation_id, event.repo_full_name, event.pr_number, timeout_body)
+                    return {"status": "timeout", "review_id": review_id}
+
+                package = ReviewPackage(
+                    run_id=review_id,
+                    repo_url=event.repo_url,
+                    mode="pr_reviewer",
+                    duration_seconds=float(review_detail.get("duration_seconds") or 0),
+                    executive_summary=review_detail.get("executive_summary") or "",
+                    findings=[],
+                    artifacts=[],
+                    citations=[],
+                    agent_statuses=review_detail.get("agent_statuses") or {},
+                    partial=bool(review_detail.get("partial", False)),
+                    model_version="",
+                )
+                comment_body = render_pr_github_comment(package)
+                await post_review_comment(event.installation_id, event.repo_full_name, event.pr_number, comment_body)
+                return {"status": "review_posted", "review_id": review_id}
+            except Exception as exc:
+                logger.error("Failed PR review flow: %s", exc)
+                raise HTTPException(status_code=500, detail=str(exc))
 
     if event_type == "installation":
         action = payload.get("action", "")
-        logger.info(f"Installation event: {action}")
+        logger.info("Installation event: %s", action)
         return {"status": "ok", "action": action}
 
     return {"status": "ignored", "event": event_type}

@@ -24,7 +24,7 @@ class TestSupervisor:
     @pytest.mark.asyncio
     async def test_run_returns_review_package(self, mock_llm, mock_searcher):
         mock_llm.complete = AsyncMock(return_value="Executive summary here.")
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="context")
         retriever.query = AsyncMock(return_value=[])
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
@@ -42,7 +42,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_mode_aware_agent_routing(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="ctx")
         retriever.query = AsyncMock(return_value=[])
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
@@ -57,7 +57,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_all_14_modes_build_agents(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="ctx")
         retriever.query = AsyncMock(return_value=[])
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
@@ -69,7 +69,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_deduplication(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="ctx")
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
 
@@ -83,7 +83,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_dedup_keeps_different(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="ctx")
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
 
@@ -98,7 +98,7 @@ class TestSupervisor:
     @pytest.mark.asyncio
     async def test_agent_exception_handled(self, mock_llm, mock_searcher):
         mock_llm.complete = AsyncMock(return_value="Summary")
-        retriever = AsyncMock()
+        retriever = MagicMock()
         retriever.retrieve_as_context = AsyncMock(return_value="ctx")
         retriever.query = AsyncMock(return_value=[])
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
@@ -120,7 +120,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_hitl_override_incident(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
         from archon.engine.hitl.checkpoints import HITLMode
 
@@ -130,7 +130,7 @@ class TestSupervisor:
 
     @pytest.mark.asyncio
     async def test_hitl_minimum_due_diligence(self, mock_llm, mock_searcher):
-        retriever = AsyncMock()
+        retriever = MagicMock()
         supervisor = Supervisor(mock_llm, [mock_searcher], retriever)
         from archon.engine.hitl.checkpoints import HITLMode
 

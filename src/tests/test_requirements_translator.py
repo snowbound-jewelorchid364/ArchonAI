@@ -2,7 +2,7 @@
 from __future__ import annotations
 import json
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from archon.engine.intake import ProductBrief
 from archon.engine.requirements_translator import TechnicalConstraints, translate
 
@@ -31,7 +31,7 @@ VALID_LLM_RESPONSE = json.dumps({
 
 @pytest.mark.asyncio
 async def test_translate_returns_constraints():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value=VALID_LLM_RESPONSE)
     result = await translate(BRIEF, mock_llm)
     assert isinstance(result, TechnicalConstraints)
@@ -42,7 +42,7 @@ async def test_translate_returns_constraints():
 
 @pytest.mark.asyncio
 async def test_translate_fallback_on_bad_json():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value="not valid json at all")
     result = await translate(BRIEF, mock_llm)
     assert isinstance(result, TechnicalConstraints)
@@ -52,7 +52,7 @@ async def test_translate_fallback_on_bad_json():
 
 @pytest.mark.asyncio
 async def test_translate_detects_compliance():
-    mock_llm = AsyncMock()
+    mock_llm = MagicMock()
     mock_llm.complete = AsyncMock(return_value=VALID_LLM_RESPONSE)
     result = await translate(BRIEF, mock_llm)
     assert "HIPAA" in result.compliance_requirements

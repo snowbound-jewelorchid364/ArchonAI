@@ -74,7 +74,7 @@ async def test_e2e_review_pipeline_clone_index_agents_merge_zip() -> None:
         chunk_count = await indexer.index(str(cloned))
         assert chunk_count > 0
 
-        llm = AsyncMock()
+        llm = MagicMock()
         llm.complete = AsyncMock(return_value="Executive summary")
         supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 

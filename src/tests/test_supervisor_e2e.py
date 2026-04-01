@@ -32,7 +32,7 @@ def _output(domain: str, finding: Finding) -> AgentOutput:
 
 @pytest.mark.asyncio
 async def test_supervisor_run_merges_six_domains() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Executive summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 
@@ -65,7 +65,7 @@ async def test_supervisor_run_merges_six_domains() -> None:
 
 @pytest.mark.asyncio
 async def test_supervisor_deduplicates_identical_findings_across_agents() -> None:
-    llm = AsyncMock()
+    llm = MagicMock()
     llm.complete = AsyncMock(return_value="Summary")
     supervisor = Supervisor(llm, [MagicMock()], MagicMock())
 

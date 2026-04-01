@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -65,7 +65,7 @@ async def test_rag_indexer_indexes_fixture_repo_and_stores_nonempty_chunks() -> 
 
 @pytest.mark.asyncio
 async def test_rag_retriever_returns_authentication_middleware_relevant_context() -> None:
-    store = AsyncMock()
+    store = MagicMock()
     store.query = AsyncMock(
         return_value=[
             DocumentChunk(

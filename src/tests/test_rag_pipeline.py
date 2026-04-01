@@ -11,7 +11,7 @@ from archon.core.ports.vector_store_port import DocumentChunk
 class TestRAGIndexer:
     @pytest.mark.asyncio
     async def test_index_calls_repo_and_store(self, mock_repo_reader):
-        store = AsyncMock()
+        store = MagicMock()
         store.index = AsyncMock()
         indexer = RAGIndexer(mock_repo_reader, store)
         count = await indexer.index("/tmp/test")
@@ -21,7 +21,7 @@ class TestRAGIndexer:
 
     @pytest.mark.asyncio
     async def test_index_returns_chunk_count(self, mock_repo_reader):
-        store = AsyncMock()
+        store = MagicMock()
         store.index = AsyncMock()
         indexer = RAGIndexer(mock_repo_reader, store)
         count = await indexer.index("/tmp/test")
@@ -32,7 +32,7 @@ class TestRAGIndexer:
 class TestRAGRetriever:
     @pytest.mark.asyncio
     async def test_retrieve_calls_store(self, sample_chunks):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=sample_chunks[:2])
         retriever = RAGRetriever(store)
         results = await retriever.retrieve("security patterns")
@@ -41,7 +41,7 @@ class TestRAGRetriever:
 
     @pytest.mark.asyncio
     async def test_retrieve_as_context_returns_string(self, sample_chunks):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=sample_chunks[:1])
         retriever = RAGRetriever(store)
         ctx = await retriever.retrieve_as_context("query")
@@ -50,7 +50,7 @@ class TestRAGRetriever:
 
     @pytest.mark.asyncio
     async def test_retrieve_as_context_empty(self):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=[])
         retriever = RAGRetriever(store)
         ctx = await retriever.retrieve_as_context("query")
@@ -58,7 +58,7 @@ class TestRAGRetriever:
 
     @pytest.mark.asyncio
     async def test_retrieve_custom_top_k(self, sample_chunks):
-        store = AsyncMock()
+        store = MagicMock()
         store.query = AsyncMock(return_value=sample_chunks)
         retriever = RAGRetriever(store)
         await retriever.retrieve("query", top_k=3)
