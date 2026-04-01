@@ -135,8 +135,8 @@ ARCHON is an **autonomous AI architecture co-pilot** that combines:
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/VenkataAnilKumar/GenAI-Platform.git
-cd GenAI-Platform
+git clone https://github.com/VenkataAnilKumar/ArchonAI.git
+cd ArchonAI
 
 # Install Python dependencies
 pip install uv
@@ -345,7 +345,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - **Author:** Venkata Anil Kumar
 - **GitHub:** [@VenkataAnilKumar](https://github.com/VenkataAnilKumar)
-- **Project:** [GenAI-Platform](https://github.com/VenkataAnilKumar/GenAI-Platform)
+- **Project:** [ArchonAI](https://github.com/VenkataAnilKumar/ArchonAI)
 
 ---
 
