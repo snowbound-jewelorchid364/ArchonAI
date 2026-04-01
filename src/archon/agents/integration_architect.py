@@ -11,12 +11,15 @@ class IntegrationArchitectAgent(BaseArchitectAgent):
     domain = "integration-architect"
     _prompt_path = "integration_architect.md"
 
-    async def _analyse(self, repo_context: str, mode: str) -> AgentOutput:
-        search_results = await self._search("API design REST gRPC event-driven microservices integration 2025", max_results=5)
+    async def _analyse(self, repo_context: str, mode: str, mode_focus: str = "") -> AgentOutput:
+        search_results = await self._search("integration architecture API gateway event driven microservices saga CQRS 2025", max_results=5)
         citations = build_citations(search_results)
         citation_ctx = chr(10).join(f"- {c.title}: {c.excerpt[:200]}" for c in citations[:5])
 
+        focus_line = f"Mode focus: {mode_focus}" if mode_focus else ""
+
         user_msg = f"""Mode: {mode}
+{focus_line}
 
 Codebase context:
 {repo_context}
@@ -24,9 +27,9 @@ Codebase context:
 Web research:
 {citation_ctx}
 
-Analyse integration: API design, service communication, EDA, microservice boundaries, saga, versioning.
+Analyse integration: API design, event-driven patterns, microservices boundaries, saga patterns, service mesh, message brokers.
 
-Return JSON only: {"findings": [{"id": "IA-001", "title": "string", "description": "string referencing actual files", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "integration-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {"findings": [{"id": "IA-001", "title": "string", "description": "string referencing actual integrations", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "integration-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

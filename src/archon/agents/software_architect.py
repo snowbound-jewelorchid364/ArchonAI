@@ -11,12 +11,15 @@ class SoftwareArchitectAgent(BaseArchitectAgent):
     domain = "software-architect"
     _prompt_path = "software_architect.md"
 
-    async def _analyse(self, repo_context: str, mode: str) -> AgentOutput:
+    async def _analyse(self, repo_context: str, mode: str, mode_focus: str = "") -> AgentOutput:
         search_results = await self._search("software architecture patterns SOLID DDD technical debt 2025", max_results=5)
         citations = build_citations(search_results)
         citation_ctx = chr(10).join(f"- {c.title}: {c.excerpt[:200]}" for c in citations[:5])
 
+        focus_line = f"Mode focus: {mode_focus}" if mode_focus else ""
+
         user_msg = f"""Mode: {mode}
+{focus_line}
 
 Codebase context:
 {repo_context}

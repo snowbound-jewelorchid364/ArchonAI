@@ -11,8 +11,8 @@ type: project
 | Layer | Technology | Version | Why |
 |---|---|---|---|
 | Agent runtime | Strands Agents SDK | latest (pin on use) | AWS open source, MCP-native, same stack as Frontier Agents |
-| LLM | Claude API | claude-opus-4-5 | Best reasoning for architecture domain, thinking budgets |
-| LLM (fast) | Claude API | claude-haiku-4-5 | Summaries, metadata, titles |
+| LLM | Claude API | claude-opus-4-6 | Best reasoning for architecture domain, thinking budgets |
+| LLM (fast) | Claude API | claude-haiku-4-5-20251001 | Summaries, metadata, titles |
 | Thinking budgets | Medium/High/Low | per-mode | Medium default, High for due diligence/compliance, Low for drift |
 | Web research | Tavily API | latest | Recency-optimised, great for CVEs + docs |
 | Web research | Exa API | latest | Semantic/neural search for patterns + papers |

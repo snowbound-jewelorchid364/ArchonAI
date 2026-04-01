@@ -183,8 +183,8 @@ Architecture Review Package
 | Layer | Technology |
 |---|---|
 | Agent runtime | Strands Agents SDK (Python, open source) |
-| LLM | Claude API (claude-opus-4-5, medium thinking budget) |
-| LLM (fast) | Claude API (claude-haiku-4-5, summaries/metadata) |
+| LLM | Claude API (claude-opus-4-6, medium thinking budget) |
+| LLM (fast) | Claude API (claude-haiku-4-5-20251001, summaries/metadata) |
 | Thinking budgets | Medium (default), High (due diligence/compliance), Low (drift monitor) |
 | Web research | Tavily Search API + Exa Search API (both, with retry) |
 | RAG / vector store | pgvector (prod) + InMemoryStore (dev) |

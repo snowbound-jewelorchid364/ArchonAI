@@ -43,14 +43,14 @@ class BaseArchitectAgent(ABC):
         return await self._retriever.retrieve_as_context(query)
 
     @abstractmethod
-    async def _analyse(self, repo_context: str, mode: str) -> AgentOutput: ...
+    async def _analyse(self, repo_context: str, mode: str, mode_focus: str = "") -> AgentOutput: ...
 
-    async def run(self, mode: str) -> AgentOutput:
+    async def run(self, mode: str, *, mode_focus: str = "") -> AgentOutput:
         start = time.monotonic()
         try:
             context = await self._retrieve_context(f"{self.domain} architecture patterns issues")
             output = await asyncio.wait_for(
-                self._analyse(context, mode),
+                self._analyse(context, mode, mode_focus=mode_focus),
                 timeout=settings.agent_timeout_seconds,
             )
             output.duration_seconds = time.monotonic() - start
@@ -58,18 +58,14 @@ class BaseArchitectAgent(ABC):
         except asyncio.TimeoutError:
             logger.error("Agent %s timed out", self.domain)
             return AgentOutput(
-                domain=self.domain,
-                confidence=0.0,
+                domain=self.domain, confidence=0.0,
                 duration_seconds=time.monotonic() - start,
-                error="Agent timed out",
-                partial=True,
+                error="Agent timed out", partial=True,
             )
         except Exception as exc:
             logger.exception("Agent %s failed: %s", self.domain, exc)
             return AgentOutput(
-                domain=self.domain,
-                confidence=0.0,
+                domain=self.domain, confidence=0.0,
                 duration_seconds=time.monotonic() - start,
-                error=str(exc),
-                partial=True,
+                error=str(exc), partial=True,
             )

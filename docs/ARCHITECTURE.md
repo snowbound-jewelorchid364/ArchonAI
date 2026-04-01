@@ -73,7 +73,7 @@ Run loop: RAG query > web search > build prompt > Claude call > parse JSON > Age
 
 | Port | Implementations |
 |---|---|
-| LLMPort | ClaudeAdapter (claude-opus-4-5 with thinking budgets) |
+| LLMPort | ClaudeAdapter (claude-opus-4-6 with thinking budgets) |
 | SearchPort | TavilyAdapter, ExaAdapter (both with retry + backoff) |
 | VectorStorePort | InMemoryStore (dev), PgVectorStore (production) |
 | RepoPort | GitHubReader (clone + validate + cleanup) |

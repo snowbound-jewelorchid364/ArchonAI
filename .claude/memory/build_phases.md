@@ -20,7 +20,7 @@ Phases 1 through 5 are complete.
 
 ### Tasks
 - [x] Project scaffold (pyproject.toml, .env, folder structure)
-- [x] Claude API integration (claude-opus-4-5 with thinking budgets)
+- [x] Claude API integration (claude-opus-4-6 with thinking budgets)
 - [x] Base agent class with system prompt injection
 - [x] 6 specialist agent definitions (software, cloud, security, data, integration, ai)
 - [x] team-architecture supervisor (asyncio.gather fan-out + merge + dedup)
