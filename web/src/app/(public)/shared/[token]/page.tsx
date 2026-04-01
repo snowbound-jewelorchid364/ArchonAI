@@ -1,5 +1,3 @@
-import { api } from '@/lib/api';
-
 interface Props {
   params: { token: string };
 }

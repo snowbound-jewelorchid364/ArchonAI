@@ -16,33 +16,25 @@ export function FindingFeedback({ reviewId, findingId }: Props) {
   async function submit(helpful: boolean) {
     setStatus(helpful ? "helpful" : "unhelpful");
     setShowComment(true);
-    await apiClient.post(
-      /reviews//feedback,
-      { finding_id: findingId, helpful, comment }
-    );
+    await apiClient.post(`/reviews/${reviewId}/feedback`, { finding_id: findingId, helpful, comment });
   }
 
   async function submitComment() {
-    await apiClient.post(
-      /reviews//feedback,
-      { finding_id: findingId, helpful: status === "helpful", comment }
-    );
+    await apiClient.post(`/reviews/${reviewId}/feedback`, {
+      finding_id: findingId,
+      helpful: status === "helpful",
+      comment,
+    });
     setShowComment(false);
   }
 
   return (
     <div className="flex items-center gap-2 mt-2">
       <span className="text-sm text-gray-500">Helpful?</span>
-      <button
-        onClick={() => submit(true)}
-        className={p-1 rounded }
-      >
+      <button onClick={() => submit(true)} className="p-1 rounded hover:bg-gray-100">
         &#x1F44D;
       </button>
-      <button
-        onClick={() => submit(false)}
-        className={p-1 rounded }
-      >
+      <button onClick={() => submit(false)} className="p-1 rounded hover:bg-gray-100">
         &#x1F44E;
       </button>
       {showComment && (

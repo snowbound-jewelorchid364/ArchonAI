@@ -95,12 +95,12 @@ Archon/
 | Phase 3 | SaaS shell — FastAPI + Next.js + Clerk + Stripe | ✅ 100% complete | Production-ready |
 | Phase 4 | Research quality — citations UI, confidence scores, diagrams | ✅ 100% complete | Production-ready |
 | Phase 5 | Distribution — VS Code, GitHub App, CLI | 🟡 85% complete | Real HTTP clients done, publish pending |
-| Phase 6 | Input formats + Output formats + Chat foundation | 🔲 Planned | See NEWFEATURES.md |
-| Phase 7 | Idea Mode (Mode 15) + Multi-option design | 🔲 Planned | See NEWFEATURES.md |
-| Phase 8 | Architecture Memory + Health Score | 🔲 Planned | See NEWFEATURES.md |
-| Phase 9 | MCP connectors — ARCHON as MCP server + inbound connectors | 🔲 Planned | See NEWFEATURES.md |
+| Phase 6 | Input formats + Output formats + Chat foundation | ✅ 100% complete | Output formats, Chat (SSE), Input parsers — 419 tests |
+| Phase 7 | Idea Mode (Mode 15) + Multi-option design | ✅ 100% complete | Idea Mode, intake wizard, 3-option design — 428 tests |
+| Phase 8 | Architecture Memory + Health Score | ✅ 100% complete | Memory snapshots, decision history, health scorer (0-100), health dashboard — ~443 tests |
+| Phase 9 | MCP connectors — ARCHON as MCP server + inbound connectors | ✅ 100% complete | MCP server (5 tools), GitHub/AWS/Slack connectors, connector registry — 477 tests |
 
-**Current focus:** Phase 6 — chat foundation first, then input/output formats
+**Current focus:** Launch prep — Railway deploy + Stripe go-live
 
 ---
 
@@ -115,11 +115,13 @@ Supports all 14 modes via `--mode` flag. HITL via `--hitl autopilot|balanced|sup
 
 ---
 
-## What's Left Before Phase 1 Production
+## What's Left Before Launch
 
-1. **Tests** — expand from ~50% to 80%+ coverage (10 integration/e2e tests needed)
+1. **Tests** — expand from ~62% to 80%+ coverage (10 integration/e2e tests needed)
 2. **Prompt validation (B4)** — run on 2-3 real repos, verify finding quality (deferred)
-3. **End-to-end test** — full pipeline on a real production codebase
+3. **Alembic migration** — run `alembic revision --autogenerate -m "add chat_messages table"` on deploy
+4. **Railway deployment** — deploy API + worker + frontend with health checks
+5. **Stripe go-live** — activate Starter/Pro/Team products, test checkout end-to-end
 
 ## New Features (Phases 6-9)
 

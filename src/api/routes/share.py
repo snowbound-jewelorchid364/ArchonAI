@@ -72,19 +72,26 @@ async def get_shared_review(
     if not review:
         raise HTTPException(404, "Review not found")
 
+    # Flatten package_json fields to top level so frontend can consume directly
+    pkg: dict = review.package_json or {}
     return {
+        "run_id": pkg.get("run_id", review.id),
         "repo_url": review.repo_url,
         "mode": review.mode,
         "status": review.status,
+        "partial": pkg.get("partial", review.partial if hasattr(review, "partial") else False),
+        "created_at": review.created_at.isoformat(),
+        "duration_seconds": pkg.get("duration_seconds", review.duration_seconds),
+        "confidence": pkg.get("confidence", review.confidence),
         "finding_count": review.finding_count,
         "critical_count": review.critical_count,
         "high_count": review.high_count,
-        "confidence": review.confidence,
-        "duration_seconds": review.duration_seconds,
-        "executive_summary": review.executive_summary,
-        "agent_statuses": review.agent_statuses,
-        "package_json": review.package_json,
-        "created_at": review.created_at.isoformat(),
+        "executive_summary": pkg.get("executive_summary", review.executive_summary or ""),
+        "findings": pkg.get("findings", []),
+        "artifacts": pkg.get("artifacts", []),
+        "citations": pkg.get("citations", []),
+        "agent_statuses": pkg.get("agent_statuses", review.agent_statuses or {}),
+        "share_token": token,
     }
 
 

@@ -271,46 +271,100 @@ Modes: **Review** + **Design**. CLI only, no UI.
 - CLI distribution (pip install archon-cli)
 - Team collaboration + multi-seat
 
-### Phase 6 — Input Formats + Output Formats + Chat (Planned)
-**Input formats — any format a founder or engineer naturally has:**
-- Voice → OpenAI Whisper transcription
-- Images → Claude Vision API (sketches, whiteboards, AWS Console, diagrams)
-- PDF → pymupdf (business plans, PRDs, compliance reports, data rooms)
-- Figma URL → Figma REST API (screens + user flows as context)
-- Website URL → scraper ("build something like X")
-- Terraform / IaC → python-hcl2 parser
-- Database schema → sqlparse (SQL dumps)
-- OpenAPI / Swagger → pyyaml parser
-- ZIP / folder upload → stdlib zipfile
-- Multimodal combiner → merge all inputs to unified context
+### Phase 6 — Input Formats + Output Formats + Chat ✅ COMPLETE
 
-**Output formats — all free / open source:**
-- Shareable web link — `/share/{token}`, no login required
-- Self-contained HTML — Mermaid CDN, filterable findings
-- PDF export — WeasyPrint (open source)
-- GitHub Issues — HIGH+ findings as tickets (free API)
-- GitHub ADR commit — ADRs to `/docs/adr/` in user's repo
-- Slack webhook digest — health score + findings (free)
-- JSON / YAML export — pyyaml
+**Output formats (all free / open source):**
+- Shareable web link — `GET /api/v1/share/{token}`, public page, no login required
+- Self-contained HTML — Mermaid CDN, filterable findings, dark mode (`html_exporter.py`)
+- PDF export — WeasyPrint, multi-page (`pdf_exporter.py`)
+- SVG diagrams — mermaid-cli, fallback to raw .mmd (`svg_renderer.py`)
+- GitHub Issues — HIGH+ findings as tickets (`github_issues.py`)
+- GitHub ADR commit — ADRs to `/docs/adr/` in user's repo (`github_adr.py`)
+- Slack webhook digest — Block Kit, health score + top findings (`slack_notifier.py`)
+- YAML / JSON export — pyyaml (`yaml_exporter.py`)
+- CLI: `--format zip|html|pdf|json|yaml`, `--github-issues`, `--github-adrs`, `--slack-webhook`
 
-**Chat foundation (required for all phases after this):**
-- Architecture Chat — conversational Q&A grounded in findings + RAG + web search
-- `/api/reviews/{id}/chat` endpoint
-- Chat grounded in any input format provided
+**Input format parsers (`src/archon/input/`):**
+- PDF → pymupdf — text + images per page
+- Image → Claude Vision API — sketches, whiteboards, AWS Console diagrams
+- Website URL → httpx + BeautifulSoup4 — main content extraction
+- Terraform / IaC → python-hcl2 + CloudFormation YAML
+- Database schema → sqlparse — tables, columns, FK relationships
+- OpenAPI / Swagger → pyyaml — endpoints, schemas, security schemes
+- ZIP / folder → stdlib zipfile — delegates files to correct parser automatically
+- Combiner — merges multiple ParsedInputs into unified context string
+- Upload endpoint: `POST /api/v1/reviews/{id}/inputs` (multipart form)
 
-### Phase 7 — Idea Mode + Design (Planned)
-Non-engineers can go from napkin idea to full architecture via conversation.
-- **Idea Mode (Mode 15)** — natural language idea → architecture, no repo, no brief, no jargon
-- **Conversational intake** — 5-6 plain product questions (users, features, budget, timeline, compliance)
-- **Requirements translator** — maps product answers to technical constraints silently
-- **Multi-option design** — 3 options: Lean / Scalable / Enterprise with cost, timeline, trade-offs, IaC
-- **Plain English output** — findings rendered without jargon, every decision explained simply
-- **Visual architecture map** — interactive color-coded SVG, click component → see findings
-- **"What to build first" plan** — week-by-week prioritised build sequence
+**Architecture Chat (`src/archon/chat/`):**
+- `POST /api/v1/reviews/{id}/chat` — SSE streaming, grounded in review findings
+- `GET /api/v1/reviews/{id}/chat` — full conversation history
+- System prompt embeds all findings + executive summary from the completed review
+- History persisted to `chat_messages` PostgreSQL table
+- Frontend: `ChatWindow` component, streaming cursor, loads history on mount
 
-### Phase 8 — Intelligence (Planned)
-- **Architecture Memory** — persistent knowledge graph per org, remembers all reviews + decisions
-- **Architecture Health Score** — continuous 0–100 score across 6 domains, weekly digest, alert rules
+**Phase 6 stats: 419 tests, 57 files, all passing**
+
+### Phase 7 — Idea Mode + Design ✅ COMPLETE
+
+Anyone — engineer or not — can go from a plain English idea to a complete architecture.
+
+**Idea Mode (Mode 15) — shipped:**
+- Natural language idea → full architecture, no repo, no GitHub, no jargon required
+- `src/archon/engine/modes/configs.py` — IDEA_MODE added to ALL_MODES registry
+
+**Conversational intake (`src/archon/engine/intake.py`) — shipped:**
+- 6 plain-English questions: users, core value, year-1/year-2 scale, budget, timeline, compliance
+- ProductBrief Pydantic model captures all answers
+- SSE streaming: `POST /api/v1/intake/start` yields questions one at a time
+- `POST /api/v1/intake/submit` validates answers, creates review, kicks off pipeline
+
+**Requirements translator (`src/archon/engine/requirements_translator.py`) — shipped:**
+- Silently converts ProductBrief → TechnicalConstraints (never shown to user)
+- Extracts: user_type, estimated_rps, budget_monthly_usd, timeline_weeks, compliance_requirements
+- Uses fast model (claude-haiku) for speed; fallback defaults if parsing fails
+
+**Multi-option design (`src/archon/engine/multi_option_designer.py`) — shipped:**
+- Generates 3 options: Lean MVP / Growth-Ready / Enterprise-Scale
+- Each option: monthly cost estimate, team size, time to MVP, tech stack, tradeoffs, ADRs, suitable_for
+- Validates: budget < $500/month → Lean must not include Kubernetes
+
+**Output (`src/archon/output/formatter.py`) — new sections shipped:**
+- `product_summary` — plain English summary of what was described
+- `architecture_options` — 3-column comparison table
+- `recommended_option` — highlighted recommendation with rationale
+- `what_to_build_first` — week-by-week build sequence
+- `plain_english_glossary` — every technical term defined simply
+
+**Frontend — shipped:**
+- `web/src/components/idea/IntakeWizard.tsx` — 4-step wizard (idea → questions → building → done)
+- `web/src/app/(dashboard)/idea/page.tsx` — Idea Mode entry point
+- `main.py` — `--idea` CLI flag for terminal intake
+
+**Phase 7 stats: 428 tests, 60 files, all passing**
+
+### Phase 8 — Intelligence ✅ Complete
+
+**Delivered 2026-04-01 — ~443 tests, all passing**
+
+#### Phase 8A — Architecture Memory
+- `src/archon/memory/snapshot.py` — `save_snapshot()` / `get_snapshots()` / `build_memory_context()` (injects prior review context into agent system prompts)
+- `src/archon/memory/decisions.py` — `save_decisions()` extracts ADR artifacts, `get_decisions()` returns decision history
+- DB tables: `architecture_snapshots`, `decision_history` (SQLAlchemy async, Alembic migration pending on deploy)
+- API: `GET /api/v1/memory/snapshots`, `/decisions`, `/timeline`
+- `supervisor.py` accepts `memory_context: str = ""` injected by jobs worker from DB
+- `review_service.py` auto-saves snapshot + decisions on review COMPLETED
+
+#### Phase 8B — Architecture Health Score
+- `src/archon/health/scorer.py` — `compute_health_score()` produces 0–100 per domain + weighted overall
+  - Severity penalties: CRITICAL −15, HIGH −7, MEDIUM −3, LOW −1
+  - Security + Cloud domains weighted 1.5× (higher stakes)
+  - Time-series storage via `health_scores` DB table
+- API: `GET /api/v1/health-score/{repo_url}/latest` and `/history`
+- Frontend: `HealthScoreRing.tsx` (SVG ring, green ≥80 / amber 60–79 / red <60) + domain bars
+- Frontend: `ScoreTrendChart.tsx` (pure SVG line chart, no chart library)
+- Frontend: `/health` dashboard page
+
+**Phase 8 stats: ~443 tests, ~63 files, all passing**
 
 ### Phase 9 — MCP Connectors (Planned)
 Strands SDK is MCP-native — connectors add live operational data to agent context.

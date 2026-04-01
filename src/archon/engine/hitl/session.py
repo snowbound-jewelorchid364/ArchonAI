@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, UTC
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from .checkpoints import HITLMode, CheckpointType, Checkpoint, get_checkpoints
 
 logger = logging.getLogger(__name__)
@@ -14,8 +14,7 @@ class HITLSession(BaseModel):
     checkpoints: list[Checkpoint] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def needs_checkpoint(self, checkpoint_type: CheckpointType) -> bool:
         return checkpoint_type in get_checkpoints(self.hitl_mode)

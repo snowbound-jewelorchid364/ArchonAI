@@ -122,6 +122,24 @@ async def update_review_status(
             update(ReviewRow).where(ReviewRow.id == review_id).values(**values)
         )
 
+        if status == "COMPLETED" and package_json is not None:
+            from archon.core.models.review_package import ReviewPackage
+            from archon.memory.snapshot import save_snapshot
+            from archon.memory.decisions import save_decisions
+            from archon.health.scorer import save_health_score
+            row_result = await session.execute(
+                select(ReviewRow).where(ReviewRow.id == review_id)
+            )
+            review_row = row_result.scalar_one_or_none()
+            if review_row:
+                try:
+                    pkg = ReviewPackage.model_validate(package_json)
+                    await save_snapshot(session, review_row.user_id, review_id, pkg)
+                    await save_decisions(session, review_row.user_id, review_id, pkg)
+                    await save_health_score(session, review_row.user_id, review_id, pkg)
+                except Exception as _exc:
+                    logger.warning("memory/health save failed: %s", _exc)
+
 
 async def update_job_progress(job_id: str, status: str, progress: dict | None = None) -> None:
     async with get_session() as session:

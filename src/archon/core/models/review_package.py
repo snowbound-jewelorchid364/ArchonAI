@@ -21,6 +21,7 @@ class ReviewPackage(BaseModel):
     partial: bool = False
     model_version: str = ""
     prompt_version: str = ""
+    share_token: str | None = None
 
     def all_findings(self) -> list[Finding]:
         return self.findings

@@ -14,7 +14,7 @@ class TestCLIParsing:
         spec.loader.exec_module(main_mod)
         assert "review" in main_mod.ALL_MODES
         assert "design" in main_mod.ALL_MODES
-        assert len(main_mod.ALL_MODES) == 14
+        assert len(main_mod.ALL_MODES) == 15
 
     def test_14_modes_present(self):
         import importlib.util

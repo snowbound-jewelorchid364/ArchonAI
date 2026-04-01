@@ -5,29 +5,29 @@ import type { Review, ReviewPackage } from "@/types";
 export function useReview(reviewId: string) {
   const [review, setReview] = useState<Review | null>(null);
   const [pkg, setPkg] = useState<ReviewPackage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!reviewId) return;
 
-    async function fetch() {
+    async function load() {
       try {
-        const data = await apiClient.get<Review>(/reviews/);
+        const data = await apiClient.get<Review>(`/reviews/${reviewId}`);
         setReview(data);
         if (data.status === "completed") {
-          const pkgData = await apiClient.get<ReviewPackage>(/reviews//package);
+          const pkgData = await apiClient.get<ReviewPackage>(`/reviews/${reviewId}/package`);
           setPkg(pkgData);
         }
       } catch (e: any) {
         setError(e.message || "Failed to load review");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     }
 
-    fetch();
+    load();
   }, [reviewId]);
 
-  return { review, pkg, loading, error };
+  return { review, pkg, isLoading, error };
 }

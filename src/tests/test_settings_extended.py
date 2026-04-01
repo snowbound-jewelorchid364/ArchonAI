@@ -35,7 +35,7 @@ class TestSettingsRequireKeys:
 
 class TestAllModes:
     def test_14_modes_registered(self):
-        assert len(ALL_MODES) == 14
+        assert len(ALL_MODES) == 15
 
     def test_all_mode_names(self):
         expected = {
@@ -43,7 +43,8 @@ class TestAllModes:
             "due_diligence", "incident_responder", "cost_optimiser",
             "pr_reviewer", "scaling_advisor", "drift_monitor",
             "feature_feasibility", "vendor_evaluator",
-            "onboarding_accelerator", "sunset_planner"
+            "onboarding_accelerator", "sunset_planner",
+            "idea_mode"
         }
         assert set(ALL_MODES.keys()) == expected
 

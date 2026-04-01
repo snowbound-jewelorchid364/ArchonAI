@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "archon": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "env": {
+        "ARCHON_API_URL": "http://localhost:8000",
+        "ARCHON_API_KEY": "your-api-key"
+      }
+    }
+  }
+}

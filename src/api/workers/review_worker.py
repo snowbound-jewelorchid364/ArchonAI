@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import logging
+import secrets
 
 from src.archon.config.settings import settings
 from src.archon.infrastructure.llm.claude_adapter import ClaudeAdapter
@@ -11,7 +12,11 @@ from src.archon.infrastructure.github.github_reader import GitHubReader
 from src.archon.rag.indexer import RAGIndexer
 from src.archon.rag.retriever import RAGRetriever
 from src.archon.engine.supervisor import Supervisor
+from src.archon.memory.snapshot import build_memory_context
+from src.archon.mcp.connector_registry import fetch_connector_context
 from src.api.services.review_service import update_review_status, update_job_progress
+from src.db.connection import get_session
+from src.db.models import ShareLinkRow
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,7 @@ async def process_review(
     job_id: str,
     repo_url: str,
     mode: str,
+    user_id: str = "",
 ) -> None:
     github = GitHubReader()
     repo_path: str | None = None
@@ -36,7 +42,8 @@ async def process_review(
 
         if loc > settings.max_loc:
             await update_review_status(
-                review_id, "FAILED",
+                review_id,
+                "FAILED",
                 error=f"Repo exceeds {settings.max_loc:,} LOC limit ({loc:,} measured)",
             )
             await update_job_progress(job_id, "FAILED")
@@ -56,9 +63,50 @@ async def process_review(
         searchers = [TavilyAdapter(), ExaAdapter()]
         supervisor = Supervisor(llm, searchers, retriever)
 
-        package = await supervisor.run(repo_url, mode, job_id=job_id)
+        memory_context = ""
+        if user_id:
+            try:
+                async with get_session() as session:
+                    memory_context = await build_memory_context(session, user_id, repo_url)
+            except Exception as exc:
+                logger.warning("Review %s: memory context unavailable: %s", review_id, exc)
 
-        # Store results
+        connector_sections: list[str] = []
+        for name in ["github", "aws"]:
+            try:
+                ctx = await fetch_connector_context(name, repo_url=repo_url)
+                if ctx:
+                    connector_sections.append(
+                        f"## Live {ctx.source.upper()} Data\n{ctx.summary}"
+                    )
+            except Exception as exc:
+                logger.warning("Review %s: connector fetch failed (%s): %s", review_id, name, exc)
+        connector_context = "\n\n".join(connector_sections)
+
+        package = await supervisor.run(
+            repo_url,
+            mode,
+            job_id=job_id,
+            memory_context=memory_context,
+            connector_context=connector_context,
+        )
+
+        # Auto-generate a share token for this completed review
+        share_token = secrets.token_urlsafe(32)
+        package.share_token = share_token
+        if user_id:
+            async with get_session() as session:
+                link = ShareLinkRow(
+                    review_id=review_id,
+                    user_id=user_id,
+                    token=share_token,
+                    is_active=True,
+                )
+                session.add(link)
+                await session.commit()
+            logger.info("Review %s: share token created", review_id)
+
+        # Store results (package_json now includes share_token)
         severity_counts = package.severity_counts
         await update_review_status(
             review_id,

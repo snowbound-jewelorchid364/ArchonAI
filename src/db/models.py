@@ -67,8 +67,70 @@ class ShareLinkRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 
+class ChatMessageRow(Base):
+    __tablename__ = "chat_messages"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    review_id: Mapped[str] = mapped_column(String(36), index=True)
+    role: Mapped[str] = mapped_column(String(16))  # "user" | "assistant"
+    content: Mapped[str] = mapped_column(Text)
+    citations: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+
+class ArchitectureSnapshotRow(Base):
+    __tablename__ = "architecture_snapshots"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    review_id: Mapped[str] = mapped_column(String(36), index=True)
+    repo_url: Mapped[str] = mapped_column(String(512))
+    mode: Mapped[str] = mapped_column(String(64))
+    summary: Mapped[str] = mapped_column(Text)
+    finding_count: Mapped[int] = mapped_column(Integer, default=0)
+    critical_count: Mapped[int] = mapped_column(Integer, default=0)
+    high_count: Mapped[int] = mapped_column(Integer, default=0)
+    domains_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+class DecisionHistoryRow(Base):
+    __tablename__ = "decision_history"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    review_id: Mapped[str] = mapped_column(String(36), index=True)
+    repo_url: Mapped[str] = mapped_column(String(512))
+    adr_title: Mapped[str] = mapped_column(String(512))
+    decision: Mapped[str] = mapped_column(Text)
+    rationale: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+class HealthScoreRow(Base):
+    __tablename__ = "health_scores"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    review_id: Mapped[str] = mapped_column(String(36), index=True)
+    repo_url: Mapped[str] = mapped_column(String(512))
+    overall: Mapped[float] = mapped_column(Float)
+    software: Mapped[float] = mapped_column(Float, default=0.0)
+    cloud: Mapped[float] = mapped_column(Float, default=0.0)
+    security: Mapped[float] = mapped_column(Float, default=0.0)
+    data: Mapped[float] = mapped_column(Float, default=0.0)
+    integration: Mapped[float] = mapped_column(Float, default=0.0)
+    ai: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+
 # Aliases for convenience
 User = UserRow
 Review = ReviewRow
 Job = JobRow
 ShareLink = ShareLinkRow
+ChatMessage = ChatMessageRow
+
+ArchitectureSnapshot = ArchitectureSnapshotRow
+DecisionHistory = DecisionHistoryRow
+HealthScore = HealthScoreRow
+

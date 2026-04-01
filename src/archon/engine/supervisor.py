@@ -72,6 +72,8 @@ class Supervisor:
         job_id: str | None = None,
         hitl_mode: HITLMode = HITLMode.AUTOPILOT,
         on_checkpoint: object = None,
+        memory_context: str = "",
+        connector_context: str = "",
     ) -> ReviewPackage:
         run_id = job_id or str(uuid.uuid4())
         start = time.monotonic()
@@ -99,8 +101,10 @@ class Supervisor:
                 await session.wait_for_approval(cp)
 
         # Fan out only active agents in parallel, passing mode focus as context
+        context_parts = [c for c in [memory_context, connector_context, mode_config.supervisor_focus] if c]
+        effective_focus = "\n\n".join(context_parts)
         results = await asyncio.gather(
-            *[agent.run(mode, mode_focus=mode_config.supervisor_focus) for agent in agents],
+            *[agent.run(mode, mode_focus=effective_focus) for agent in agents],
             return_exceptions=True,
         )
 
@@ -197,3 +201,8 @@ class Supervisor:
             )
         except Exception:
             return f"Review complete. {len(findings)} findings ({critical} critical, {high} high)."
+
+
+
+
+

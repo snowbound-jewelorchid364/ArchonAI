@@ -126,6 +126,42 @@ SUNSET_PLANNER = ModeConfig(
     output_sections=["executive_summary", "dependency_map", "shutdown_sequence", "data_disposition", "compliance_checklist", "cost_savings", "citations"],
 )
 
+IDEA_MODE = ModeConfig(
+    name="idea_mode",
+    description="Natural language product idea to complete architecture, no technical knowledge needed",
+    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
+    supervisor_focus="prescriptive multi-option -- generate Lean/Scalable/Enterprise options within constraints",
+    output_sections=[
+        "executive_summary",
+        "product_summary",
+        "architecture_options",
+        "recommended_option",
+        "what_to_build_first",
+        "adrs",
+        "diagrams",
+        "plain_english_glossary",
+        "citations",
+    ],
+)
+
+IDEA_MODE = ModeConfig(
+    name="idea_mode",
+    description="Natural language product idea to complete architecture, no technical knowledge needed",
+    active_agents=["software", "cloud", "security", "data", "integration", "ai"],
+    supervisor_focus="prescriptive multi-option -- generate Lean/Scalable/Enterprise options within constraints",
+    output_sections=[
+        "executive_summary",
+        "product_summary",
+        "architecture_options",
+        "recommended_option",
+        "what_to_build_first",
+        "adrs",
+        "diagrams",
+        "plain_english_glossary",
+        "citations",
+    ],
+)
+
 
 ALL_MODES: dict[str, ModeConfig] = {
     "review": REVIEW,
@@ -142,6 +178,7 @@ ALL_MODES: dict[str, ModeConfig] = {
     "vendor_evaluator": VENDOR_EVALUATOR,
     "onboarding_accelerator": ONBOARDING_ACCELERATOR,
     "sunset_planner": SUNSET_PLANNER,
+    "idea_mode": IDEA_MODE,
 }
 
 

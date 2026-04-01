@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { api } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 
 interface Props {
   reviewId: string;
@@ -20,8 +20,10 @@ export function ShareModal({ reviewId, isOpen, onClose }: Props) {
   async function handleCreate() {
     setLoading(true);
     try {
-      const resp = await api.post('/share', { review_id: reviewId, expires_in_days: expiryDays });
-      const data = await resp.json();
+      const data = await apiClient.post<{ url: string; token: string }>(
+        '/share',
+        { review_id: reviewId, expires_in_days: expiryDays }
+      );
       setShareUrl(`${window.location.origin}${data.url}`);
     } finally {
       setLoading(false);
