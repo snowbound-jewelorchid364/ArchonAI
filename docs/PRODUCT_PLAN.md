@@ -8,6 +8,8 @@
 
 ARCHON is an autonomous SaaS co-pilot that runs 6 specialist AI architect agents in parallel — researching your codebase and the live web — to deliver a complete, cited Architecture Review Package in under an hour, with human checkpoints at every critical decision.
 
+**Anyone with a product idea — engineer or not — can get a complete architecture.** Submit a voice note, a sketch, a Figma file, a PDF, or just describe your idea in plain English. ARCHON asks the right questions and produces a full architecture design.
+
 **Name origin:** Greek ἄρχων — ruler, chief magistrate, commander.
 
 ---
@@ -21,6 +23,7 @@ Architecture reviews are expensive, slow, and inconsistent.
 - DIY reviews miss security, cost, and compliance angles
 - Asking Claude/GPT directly gives generic, ungrounded, outdated answers
 - Most startups skip reviews entirely and pay for it later (costly rewrites, outages, compliance failures)
+- Non-engineers (founders, PMs) have no way to validate their product architecture before hiring engineers
 
 **Average architectural mistake costs $50–500k to fix post-production.**
 
@@ -38,7 +41,7 @@ Human-in-the-Loop      →  Checkpoints, redirect, approve, veto — human stays
 
 ---
 
-## Intelligence Stack (3 Layers)
+## Intelligence Stack (4 Layers)
 
 ### Layer 1 — Frontier Agent Layer (AWS Pattern)
 - Autonomous execution — runs for hours without intervention
@@ -60,6 +63,17 @@ Human-in-the-Loop      →  Checkpoints, redirect, approve, veto — human stays
 - Internal docs + runbooks
 - Hybrid search: semantic + keyword
 - Re-indexed on every new review
+
+### Layer 4 — Multimodal Input Layer (New)
+- Voice → OpenAI Whisper transcription
+- Images → Claude Vision API (sketches, whiteboards, AWS Console, diagrams)
+- PDFs → pymupdf (business plans, PRDs, compliance reports, data rooms)
+- Figma URLs → Figma REST API (screens + user flows)
+- Website URLs → scraper ("build something like X")
+- IaC files → python-hcl2 (Terraform, CloudFormation)
+- Database schemas → sqlparse (SQL dumps, ERDs)
+- OpenAPI specs → pyyaml
+- All inputs normalised to unified context before agents run
 
 ---
 
@@ -252,12 +266,62 @@ Modes: **Review** + **Design**. CLI only, no UI.
 - ZIP package builder
 - Modes: **Feature Feasibility**, **Vendor Evaluator**, **Onboarding Accelerator**, **Sunset Planner**
 
-### Phase 5 — Distribution (Future)
+### Phase 5 — Distribution 🟡 IN PROGRESS
 - VS Code extension + GitHub Marketplace (PR Reviewer)
 - CLI distribution (pip install archon-cli)
 - Team collaboration + multi-seat
-- Review diff (what changed since last review)
-- Private deployment (enterprise)
+
+### Phase 6 — Input Formats + Output Formats + Chat (Planned)
+**Input formats — any format a founder or engineer naturally has:**
+- Voice → OpenAI Whisper transcription
+- Images → Claude Vision API (sketches, whiteboards, AWS Console, diagrams)
+- PDF → pymupdf (business plans, PRDs, compliance reports, data rooms)
+- Figma URL → Figma REST API (screens + user flows as context)
+- Website URL → scraper ("build something like X")
+- Terraform / IaC → python-hcl2 parser
+- Database schema → sqlparse (SQL dumps)
+- OpenAPI / Swagger → pyyaml parser
+- ZIP / folder upload → stdlib zipfile
+- Multimodal combiner → merge all inputs to unified context
+
+**Output formats — all free / open source:**
+- Shareable web link — `/share/{token}`, no login required
+- Self-contained HTML — Mermaid CDN, filterable findings
+- PDF export — WeasyPrint (open source)
+- GitHub Issues — HIGH+ findings as tickets (free API)
+- GitHub ADR commit — ADRs to `/docs/adr/` in user's repo
+- Slack webhook digest — health score + findings (free)
+- JSON / YAML export — pyyaml
+
+**Chat foundation (required for all phases after this):**
+- Architecture Chat — conversational Q&A grounded in findings + RAG + web search
+- `/api/reviews/{id}/chat` endpoint
+- Chat grounded in any input format provided
+
+### Phase 7 — Idea Mode + Design (Planned)
+Non-engineers can go from napkin idea to full architecture via conversation.
+- **Idea Mode (Mode 15)** — natural language idea → architecture, no repo, no brief, no jargon
+- **Conversational intake** — 5-6 plain product questions (users, features, budget, timeline, compliance)
+- **Requirements translator** — maps product answers to technical constraints silently
+- **Multi-option design** — 3 options: Lean / Scalable / Enterprise with cost, timeline, trade-offs, IaC
+- **Plain English output** — findings rendered without jargon, every decision explained simply
+- **Visual architecture map** — interactive color-coded SVG, click component → see findings
+- **"What to build first" plan** — week-by-week prioritised build sequence
+
+### Phase 8 — Intelligence (Planned)
+- **Architecture Memory** — persistent knowledge graph per org, remembers all reviews + decisions
+- **Architecture Health Score** — continuous 0–100 score across 6 domains, weekly digest, alert rules
+
+### Phase 9 — MCP Connectors (Planned)
+Strands SDK is MCP-native — connectors add live operational data to agent context.
+- **ARCHON as MCP Server** — expose review, findings, chat, health score to Cursor / Claude Desktop
+- **GitHub MCP** — PR history, commit patterns, code ownership
+- **AWS MCP** — live CloudFormation, Cost Explorer, CloudWatch, Security Hub
+- **Slack MCP** — HITL approvals direct in Slack
+- **Datadog MCP** — APM traces, error rates, latency
+- **Snyk MCP** — live CVEs in dependencies
+- **Linear / Jira MCP** — findings → tickets workflow
+- **Terraform Cloud MCP** — live IaC state, drift detection
 
 ---
 
@@ -304,3 +368,10 @@ Modes: **Review** + **Design**. CLI only, no UI.
 | Compliance audit packages | ❌ | ❌ | ❌ | ✅ |
 | M&A / TDD package | ❌ | ❌ | ❌ | ✅ |
 | Greenfield design mode | ❌ | ❌ | ❌ | ✅ |
+| Multi-option architecture design | ❌ | ❌ | ❌ | ✅ |
+| Shareable review link | ❌ | ✅ | ❌ | ✅ |
+| Architecture Chat (RAG-grounded) | ❌ | Partial | ❌ | ✅ |
+| Architecture Memory + History | ❌ | ❌ | ❌ | ✅ |
+| MCP connector ecosystem | ❌ | ❌ | ❌ | ✅ |
+| GitHub Issues / ADR commit | ❌ | ❌ | Partial | ✅ |
+| Architecture Health Score | ❌ | ❌ | ❌ | ✅ |

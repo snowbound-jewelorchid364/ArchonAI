@@ -1,8 +1,29 @@
 # ARCHON — Pending Tasks
 
-**Last validated:** 2026-03-31
+**Last validated:** 2026-04-01
 **Overall readiness:** 82-85%
 **Tests:** 308 tests, 40 files, ~50% coverage
+**New features tracked in:** NEWFEATURES.md
+
+---
+
+## ⭐ Priority 0 — Phase 6: Output Formats (build next)
+
+All formats are free / open source. See NEWFEATURES.md Section 1 for full spec.
+
+- [ ] `src/archon/output/html_exporter.py` — self-contained HTML, Mermaid CDN, filterable findings
+- [ ] `src/archon/output/pdf_exporter.py` — WeasyPrint (`uv add weasyprint`), executive summary + full findings
+- [ ] `src/archon/output/svg_renderer.py` — shell to mermaid-cli, fallback to raw .mmd
+- [ ] `src/archon/output/github_issues.py` — push HIGH+ findings as GitHub Issues (free API)
+- [ ] `src/archon/output/github_adr.py` — commit ADRs to /docs/adr/ in user's repo
+- [ ] `src/archon/output/slack_notifier.py` — Block Kit webhook, health score + top findings
+- [ ] `src/archon/output/yaml_exporter.py` — pyyaml serialization (`uv add pyyaml`)
+- [ ] Update `src/archon/output/package_assembler.py` — add `format` param
+- [ ] Update `main.py` — add `--format`, `--github-issues`, `--github-adrs`, `--slack-webhook` flags
+- [ ] `web/app/share/[token]/page.tsx` — public shareable review page (no login)
+- [ ] Tests for all 7 exporters in `src/tests/`
+
+**Copilot prompt:** See NEWFEATURES.md bottom section "Copilot Prompt — Phase 6"
 
 ---
 

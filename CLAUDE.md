@@ -91,12 +91,16 @@ Archon/
 | Phase | Description | Status | Completeness |
 |---|---|---|---|
 | Phase 1 | Agent engine CLI — 6 agents + RAG + web search → markdown | ✅ 90% complete | Core engine done, tests needed |
-| Phase 2 | Full agent engine — HITL, high-urgency modes, session persistence | ✅ 60% complete | Infrastructure done, modes 3-6 configs only |
+| Phase 2 | Full agent engine — HITL, high-urgency modes, session persistence | ✅ 85% complete | All 14 modes wired, HITL verified |
 | Phase 3 | SaaS shell — FastAPI + Next.js + Clerk + Stripe | ✅ 100% complete | Production-ready |
 | Phase 4 | Research quality — citations UI, confidence scores, diagrams | ✅ 100% complete | Production-ready |
-| Phase 5 | Distribution — VS Code, GitHub App, CLI | 🟡 Scaffolded | Implementation in progress |
+| Phase 5 | Distribution — VS Code, GitHub App, CLI | 🟡 85% complete | Real HTTP clients done, publish pending |
+| Phase 6 | Input formats + Output formats + Chat foundation | 🔲 Planned | See NEWFEATURES.md |
+| Phase 7 | Idea Mode (Mode 15) + Multi-option design | 🔲 Planned | See NEWFEATURES.md |
+| Phase 8 | Architecture Memory + Health Score | 🔲 Planned | See NEWFEATURES.md |
+| Phase 9 | MCP connectors — ARCHON as MCP server + inbound connectors | 🔲 Planned | See NEWFEATURES.md |
 
-**Current focus:** Phase 1 — expand test coverage + validate prompt quality on real repos
+**Current focus:** Phase 6 — chat foundation first, then input/output formats
 
 ---
 
@@ -113,9 +117,34 @@ Supports all 14 modes via `--mode` flag. HITL via `--hitl autopilot|balanced|sup
 
 ## What's Left Before Phase 1 Production
 
-1. **Tests** — expand from 30% to 80%+ coverage
-2. **Prompt validation** — run on 2-3 real repos, verify finding quality
+1. **Tests** — expand from ~50% to 80%+ coverage (10 integration/e2e tests needed)
+2. **Prompt validation (B4)** — run on 2-3 real repos, verify finding quality (deferred)
 3. **End-to-end test** — full pipeline on a real production codebase
+
+## New Features (Phases 6-9)
+
+See `NEWFEATURES.md` for full details and Copilot prompts.
+
+| Phase | Focus | Key Deliverables |
+|---|---|---|
+| 6 | Input formats + Output formats + Chat | Voice, image, PDF, Figma, website, IaC, SQL inputs. HTML, PDF, GitHub, Slack outputs. Architecture Chat. |
+| 7 | Idea Mode + Design | Mode 15 (natural language → architecture), conversational intake, multi-option design, visual map |
+| 8 | Intelligence | Architecture Memory, Health Score |
+| 9 | MCP connectors | ARCHON as MCP server, GitHub/AWS/Slack/Datadog/Snyk/Linear connectors |
+
+## Input Formats Supported (Phase 6+)
+
+| Format | Library | Use Case |
+|---|---|---|
+| Voice | OpenAI Whisper | Speak your product idea |
+| Image (sketch/whiteboard/diagram) | Claude Vision API | Upload any visual input |
+| PDF | pymupdf | Business plan, PRD, compliance report |
+| Figma URL | Figma REST API | Screens + user flows as context |
+| Website URL | httpx + BeautifulSoup | "Build something like X" |
+| Terraform / IaC | python-hcl2 | Cloud architect reads live infra |
+| Database schema | sqlparse | Data architect reads SQL dump |
+| OpenAPI spec | pyyaml | Integration architect reads API contracts |
+| ZIP / folder | stdlib | Direct upload without GitHub |
 
 ## The 14 ARCHON Modes
 
