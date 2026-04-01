@@ -54,3 +54,9 @@ htmlcov/
 # ARCHON runtime
 output/
 /tmp/archon-*/
+
+# Copilot / AI-generated scratch files
+_gen_*.py
+_write_*.py
+write_files.py
+scratch_*.py
