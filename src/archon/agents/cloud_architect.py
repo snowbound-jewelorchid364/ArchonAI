@@ -29,7 +29,7 @@ Web research:
 
 Analyse cloud architecture: IaC quality, compute sizing, networking, DR strategy, FinOps, security groups.
 
-Return JSON only: {"findings": [{"id": "CA-001", "title": "string", "description": "string referencing actual infra", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "cloud-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "CA-001", "title": "string", "description": "string referencing actual infra", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "cloud-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

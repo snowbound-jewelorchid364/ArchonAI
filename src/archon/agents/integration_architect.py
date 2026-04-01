@@ -29,7 +29,7 @@ Web research:
 
 Analyse integration: API design, event-driven patterns, microservices boundaries, saga patterns, service mesh, message brokers.
 
-Return JSON only: {"findings": [{"id": "IA-001", "title": "string", "description": "string referencing actual integrations", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "integration-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "IA-001", "title": "string", "description": "string referencing actual integrations", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "integration-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

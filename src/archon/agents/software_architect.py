@@ -29,7 +29,7 @@ Web research:
 
 Analyse software architecture: patterns, SOLID violations, tech debt, coupling, NFRs, error handling.
 
-Return JSON only: {"findings": [{"id": "SA-001", "title": "string", "description": "string referencing actual files", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "software-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "SA-001", "title": "string", "description": "string referencing actual files", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "software-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

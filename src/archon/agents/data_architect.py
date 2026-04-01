@@ -29,7 +29,7 @@ Web research:
 
 Analyse data architecture: schema design, data governance, PII handling, data pipelines, storage strategy, data contracts.
 
-Return JSON only: {"findings": [{"id": "DA-001", "title": "string", "description": "string referencing actual data layer", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "data-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "DA-001", "title": "string", "description": "string referencing actual data layer", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "data-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

@@ -29,7 +29,7 @@ Web research:
 
 Analyse security: zero-trust gaps, IAM issues, encryption at rest/transit, CVEs, OWASP Top 10, compliance gaps.
 
-Return JSON only: {"findings": [{"id": "SEC-001", "title": "string", "description": "string referencing actual security config", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "security-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "SEC-001", "title": "string", "description": "string referencing actual security config", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "security-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)

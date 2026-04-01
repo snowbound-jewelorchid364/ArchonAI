@@ -29,7 +29,7 @@ Web research:
 
 Analyse AI/ML architecture: RAG quality, model serving, prompt engineering, agentic patterns, MLOps, cost optimization.
 
-Return JSON only: {"findings": [{"id": "AI-001", "title": "string", "description": "string referencing actual AI/ML code", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "ai-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}], "artifacts": [], "confidence": 0.0}"""
+Return JSON only: {{"findings": [{{"id": "AI-001", "title": "string", "description": "string referencing actual AI/ML code", "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO", "domain": "ai-architect", "file_path": "string or null", "line_number": null, "recommendation": "concrete actionable string", "citations": [], "confidence": 0.0, "from_codebase": true}}], "artifacts": [], "confidence": 0.0}}"""
 
         raw = await self._llm.complete(self._system_prompt, user_msg)
         data = parse_agent_json(raw, self.domain)
