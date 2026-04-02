@@ -1,8 +1,8 @@
 # ARCHON — Pending Tasks
 
 **Last validated:** 2026-04-01
-**Overall readiness:** 97-98%
-**Tests:** 477 passing, 89% coverage, 0 warnings
+**Overall readiness:** 99% code-complete
+**Tests:** 531 passing, 89% coverage, 0 warnings
 **Repo:** https://github.com/VenkataAnilKumar/ArchonAI (public)
 
 ---
@@ -12,20 +12,25 @@
 | Phase | Description | Tests |
 |---|---|---|
 | Phase 1 | Agent engine CLI — 6 agents + RAG + web search | ✅ |
-| Phase 2 | Full agent engine — HITL, 14 modes, session persistence | ✅ |
+| Phase 2 | Full agent engine — HITL, 15 modes, session persistence | ✅ |
 | Phase 3 | SaaS shell — FastAPI + Next.js + Clerk + Stripe | ✅ |
 | Phase 4 | Research quality — citations UI, confidence scores, diagrams | ✅ |
-| Phase 5 | Distribution — VS Code, GitHub App, CLI (HTTP clients) | ✅ |
+| Phase 5 | Distribution — VS Code, GitHub App, CLI (fully hardened) | ✅ |
 | Phase 6 | Input formats + Output formats + Architecture Chat (SSE) | ✅ |
 | Phase 7 | Idea Mode (Mode 15) + intake wizard + multi-option design | ✅ |
 | Phase 8 | Architecture Memory + Health Score (0–100, SVG dashboard) | ✅ |
 | Phase 9 | MCP Server (5 tools) + GitHub/AWS/Slack connectors | ✅ |
-| Tests | 477 tests, 89% coverage, 0 warnings | ✅ |
+| Modes 7-14 | Specialized logic — cost, PR, scaling, drift, feasibility, vendor, onboarding, sunset | ✅ |
+| CLI Auth | login/logout/status + connection/auth/API error handling | ✅ |
+| GitHub App | Retry logic, partial-failure comment, per-repo config, callback.py, rate limiting | ✅ |
+| VS Code | SecretStorage for API key, archon.configure command | ✅ |
+| CLI SSE | Rich live display, --no-stream flag, offline/expired-token tests | ✅ |
+| Tests | 531 tests, 89% coverage, 0 warnings | ✅ |
 | Cleanup | Scratch files removed, .gitignore updated, repo public | ✅ |
 
 ---
 
-## 🔴 Priority 1 — Real-Repo Validation (B4)
+## 🔴 Priority 1 — Real-Repo Validation
 
 All 15 modes are wired but have never run against a real codebase. Finding quality is unknown.
 
@@ -58,48 +63,18 @@ All 15 modes are wired but have never run against a real codebase. Finding quali
 
 ---
 
-## 🟡 Priority 3 — Distribution Channels (Phase 5 completion)
+## 🟡 Priority 3 — Publish Distribution Channels
+
+Code-complete. Needs accounts + publishing steps only.
 
 ### VS Code Extension
-- [ ] `archon.reviewWorkspace` — trigger review on open workspace
-- [ ] `archon.designMode` — input panel for brief
-- [ ] Findings sidebar TreeView — grouped by severity
-- [ ] Inline decorations — highlight files with CRITICAL findings
-- [ ] Progress webview — SSE streaming agent status
-- [ ] `archon.configure` — store API key in SecretStorage
-- [ ] Publish to VS Code Marketplace
+- [ ] Publish to VS Code Marketplace (needs publisher account + `vsce publish`)
 
 ### GitHub App
-- [ ] Error handling for Anthropic API failures (partial comment, not silence)
-- [ ] Retry logic — 3 retries with exponential backoff on comment post failure
-- [ ] Per-repo config — which branches trigger review, which file patterns to ignore
-- [ ] Implement `callback.py` — currently empty
-- [ ] Rate limiting — max 1 review per PR per 5 minutes
-- [ ] Publish to GitHub Marketplace
+- [ ] Register on GitHub Marketplace (needs GitHub App registration + listing)
 
 ### CLI Package
-- [ ] `archon login` command — POST /auth/token, store in config
-- [ ] Rich live display for SSE streaming (agent progress in terminal)
-- [ ] Connection error handling (no internet, expired token, wrong API URL)
-- [ ] Tests for all 6 CLI commands with mocked API
-- [ ] Publish to PyPI as `archon-cli`
-
----
-
-## 🟡 Priority 4 — Modes 7-14 Specialized Logic
-
-Configs + routing done. Mode-specific agent focus, inputs, and output sections pending.
-
-| Mode | Lead Agent | Pending |
-|---|---|---|
-| 7 — Cost Optimiser | Cloud | cost CSV + IaC input, savings matrix output |
-| 8 — PR Reviewer | Software | PR diff only input, < 2 min, structured comment output |
-| 9 — Scaling Advisor | Data | APM data input, bottleneck ranking + auto-scaling IaC |
-| 10 — Drift Monitor | Cloud | snapshot diff input, weekly cron trigger |
-| 11 — Feature Feasibility | Software | feature brief input, build/buy/defer verdict |
-| 12 — Vendor Evaluator | All | vendor list input, TCO + lock-in matrix |
-| 13 — Onboarding Accelerator | Software | codebase input, annotated system map + learning path |
-| 14 — Sunset Planner | Integration | service input, shutdown sequence + GDPR checklist |
+- [ ] Publish to PyPI as `archon-cli` (needs PyPI account + `twine upload`)
 
 ---
 
@@ -108,6 +83,8 @@ Configs + routing done. Mode-specific agent focus, inputs, and output sections p
 ARCHON ships when ALL of these pass:
 
 - [x] `pytest --cov=src` ≥ 80% — **89% ✅**
+- [x] All 15 modes implemented with specialized logic — **✅**
+- [x] Distribution channels code-complete — **✅**
 - [ ] 3 real-repo runs pass (< 60 min, < $15, finding quality ≥ 4/5)
 - [ ] Railway deployment live + health checks green
 - [ ] Stripe checkout working (Starter plan end-to-end)
