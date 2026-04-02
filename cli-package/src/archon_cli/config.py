@@ -1,8 +1,10 @@
 """ARCHON CLI configuration."""
-import os
+from __future__ import annotations
+
 import json
-from pathlib import Path
+import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -13,6 +15,7 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 @dataclass
 class ArchonConfig:
     """CLI configuration."""
+
     api_url: str = "https://api.archon.dev"
     api_key: str = ""
 
@@ -23,7 +26,6 @@ def get_config() -> ArchonConfig:
 
     config = ArchonConfig()
 
-    # Try config file first
     if CONFIG_FILE.exists():
         try:
             data = json.loads(CONFIG_FILE.read_text())
@@ -32,7 +34,6 @@ def get_config() -> ArchonConfig:
         except (json.JSONDecodeError, KeyError):
             pass
 
-    # Env vars override
     config.api_url = os.getenv("ARCHON_API_URL", config.api_url)
     config.api_key = os.getenv("ARCHON_API_KEY", config.api_key)
 
@@ -42,9 +43,19 @@ def get_config() -> ArchonConfig:
 def save_config(api_url: str, api_key: str) -> None:
     """Save config to ~/.archon/config.json."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(json.dumps({
-        "api_url": api_url,
-        "api_key": api_key,
-    }, indent=2))
-    # Set restrictive permissions
+    CONFIG_FILE.write_text(
+        json.dumps(
+            {
+                "api_url": api_url,
+                "api_key": api_key,
+            },
+            indent=2,
+        )
+    )
     CONFIG_FILE.chmod(0o600)
+
+
+def clear_config() -> None:
+    """Remove persisted CLI configuration if present."""
+    if CONFIG_FILE.exists():
+        CONFIG_FILE.unlink()

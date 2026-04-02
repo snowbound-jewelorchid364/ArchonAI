@@ -11,8 +11,11 @@ pip install archon-cli
 ## Quick Start
 
 ```bash
-# Configure
-archon configure
+# Validate and save your API token
+archon login
+
+# Show current auth status
+archon status
 
 # Run a review
 archon run https://github.com/org/repo --mode review
@@ -22,6 +25,23 @@ archon modes
 
 # View history
 archon history
+```
+
+## Authentication
+
+The CLI uses the same bearer token model as the ARCHON web app/API.
+
+```bash
+archon login --api-url https://api.archon.dev --api-key <token>
+archon status
+archon logout
+```
+
+You can also bypass saved config with environment variables:
+
+```bash
+export ARCHON_API_URL=https://api.archon.dev
+export ARCHON_API_KEY=your_token_here
 ```
 
 ## Modes
@@ -38,18 +58,7 @@ archon history
 | pr_reviewer | Pull request opened |
 | scaling_advisor | Traffic growing |
 | drift_monitor | Weekly architecture check |
-| feature_feasibility | "Can we build X?" |
+| feature_feasibility | Can we build X? |
 | vendor_evaluator | Database / cloud choice |
 | onboarding_accelerator | New CTO / senior hire |
 | sunset_planner | Decommission a service |
-
-## Configuration
-
-```bash
-# Interactive setup
-archon configure
-
-# Or use environment variables
-export ARCHON_API_URL=https://api.archon.dev
-export ARCHON_API_KEY=your_key_here
-```
