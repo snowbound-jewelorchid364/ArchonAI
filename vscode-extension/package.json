@@ -1,6 +1,6 @@
 {
   "name": "archon-vscode",
-  "displayName": "ARCHON \u2014 AI Architecture Reviewer",
+  "displayName": "ARCHON — AI Architecture Reviewer",
   "description": "Run autonomous architecture reviews from VS Code. 6 specialist AI agents analyze your codebase and deliver findings, ADRs, and IaC skeletons.",
   "version": "0.1.0",
   "publisher": "archon-ai",
@@ -25,6 +25,7 @@
   ],
   "activationEvents": [
     "onCommand:archon.runReview",
+    "onCommand:archon.configure",
     "onView:archon-sidebar"
   ],
   "main": "./out/extension.js",
@@ -51,6 +52,10 @@
       {
         "command": "archon.openSettings",
         "title": "ARCHON: Open Settings"
+      },
+      {
+        "command": "archon.configure",
+        "title": "ARCHON: Configure API Key"
       },
       {
         "command": "archon.cancelReview",
@@ -90,12 +95,6 @@
           "type": "string",
           "default": "https://api.archon.dev",
           "description": "ARCHON API server URL"
-        },
-        "archon.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "ARCHON API key (from dashboard)",
-          "scope": "application"
         },
         "archon.defaultMode": {
           "type": "string",
@@ -141,6 +140,11 @@
           "command": "archon.runReview",
           "when": "view == archon-agents",
           "group": "navigation"
+        },
+        {
+          "command": "archon.configure",
+          "when": "view == archon-agents",
+          "group": "navigation@2"
         }
       ],
       "editor/context": [

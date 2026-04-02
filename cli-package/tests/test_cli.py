@@ -1,15 +1,20 @@
 """Tests for ARCHON CLI."""
 from __future__ import annotations
 
+import io
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
+import httpx
 from click.testing import CliRunner
+from rich.console import Console
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from archon_cli.client import ArchonAuthError
+from archon_cli.client import ArchonAuthError, ArchonConnectionError
 from archon_cli.main import cli
+import archon_cli.sse_display as sse_display
 
 
 def test_cli_help() -> None:
@@ -118,3 +123,133 @@ def test_run_requires_login(monkeypatch) -> None:
     result = runner.invoke(cli, ["run", "https://github.com/org/repo"])
     assert result.exit_code != 0
     assert "No API key configured." in result.output
+
+
+def test_review_offline(monkeypatch) -> None:
+    runner = CliRunner()
+
+    class FakeConfig:
+        api_url = "https://api.archon.dev"
+        api_key = "token"
+
+    class FakeClient:
+        def __init__(self, api_url: str, api_key: str):
+            self.api_url = api_url
+            self.api_key = api_key
+
+        def start_review(self, repo_url: str, mode: str, hitl: str):
+            raise ArchonConnectionError("Connection failed")
+
+    monkeypatch.setattr("archon_cli.main.get_config", lambda: FakeConfig())
+    monkeypatch.setattr("archon_cli.main.ArchonAPIClient", FakeClient)
+
+    result = runner.invoke(cli, ["run", "https://github.com/org/repo"])
+    assert result.exit_code != 0
+    assert "Connection failed" in result.output
+
+
+def test_review_expired_token(monkeypatch) -> None:
+    runner = CliRunner()
+
+    class FakeConfig:
+        api_url = "https://api.archon.dev"
+        api_key = "expired"
+
+    class FakeClient:
+        def __init__(self, api_url: str, api_key: str):
+            self.api_url = api_url
+            self.api_key = api_key
+
+        def start_review(self, repo_url: str, mode: str, hitl: str):
+            raise ArchonAuthError("Token expired")
+
+    monkeypatch.setattr("archon_cli.main.get_config", lambda: FakeConfig())
+    monkeypatch.setattr("archon_cli.main.ArchonAPIClient", FakeClient)
+
+    result = runner.invoke(cli, ["run", "https://github.com/org/repo"])
+    assert result.exit_code != 0
+    assert "Token expired" in result.output
+
+
+def test_review_no_stream_flag(monkeypatch) -> None:
+    runner = CliRunner()
+    calls = {"stream": 0, "poll": 0}
+
+    class FakeConfig:
+        api_url = "https://api.archon.dev"
+        api_key = "token"
+
+    class FakeClient:
+        def __init__(self, api_url: str, api_key: str):
+            self.api_url = api_url
+            self.api_key = api_key
+
+        def start_review(self, repo_url: str, mode: str, hitl: str):
+            return {"review_id": "r1", "job_id": "j1"}
+
+        def poll_review(self, review_id: str):
+            calls["poll"] += 1
+            return {"findings": [], "status": "COMPLETED"}
+
+        def download_package(self, review_id: str, output_dir: str):
+            return "out.zip"
+
+        def download_markdown(self, review_id: str, output_dir: str):
+            return "out.md"
+
+    def fake_stream(url: str, token: str) -> None:
+        calls["stream"] += 1
+
+    monkeypatch.setattr("archon_cli.main.get_config", lambda: FakeConfig())
+    monkeypatch.setattr("archon_cli.main.ArchonAPIClient", FakeClient)
+    monkeypatch.setattr("archon_cli.main.stream_review_progress", fake_stream)
+
+    result = runner.invoke(cli, ["run", "https://github.com/org/repo", "--no-stream"])
+    assert result.exit_code == 0
+    assert calls == {"stream": 0, "poll": 1}
+
+
+def test_sse_display_renders_table(monkeypatch) -> None:
+    output = io.StringIO()
+    sse_display.console = Console(file=output, force_terminal=False, color_system=None)
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def iter_lines(self):
+            return iter([
+                'event: agent_update',
+                'data: {"agent": "software-architect", "status": "RUNNING", "findings_count": 0}',
+                'event: agent_update',
+                'data: {"agent": "cloud-architect", "status": "COMPLETED", "findings_count": 4}',
+                'event: done',
+                'data: Review finished',
+            ])
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def stream(self, method: str, url: str):
+            return FakeResponse()
+
+    monkeypatch.setattr(sse_display.httpx, 'Client', FakeClient)
+
+    sse_display.stream_review_progress('http://test/api/v1/jobs/j1/stream', 'token')
+    rendered = output.getvalue()
+    assert 'software-architect' in rendered
+    assert 'cloud-architect' in rendered
+    assert 'Review finished' in rendered

@@ -11,19 +11,11 @@ pip install archon-cli
 ## Quick Start
 
 ```bash
-# Validate and save your API token
 archon login
-
-# Show current auth status
 archon status
-
-# Run a review
 archon run https://github.com/org/repo --mode review
-
-# List all modes
+archon run https://github.com/org/repo --no-stream
 archon modes
-
-# View history
 archon history
 ```
 
@@ -37,12 +29,9 @@ archon status
 archon logout
 ```
 
-You can also bypass saved config with environment variables:
+## Streaming
 
-```bash
-export ARCHON_API_URL=https://api.archon.dev
-export ARCHON_API_KEY=your_token_here
-```
+By default the CLI shows a live Rich SSE table for agent progress. Use `--no-stream` in CI or shells where streaming output is undesirable.
 
 ## Modes
 

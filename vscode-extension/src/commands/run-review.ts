@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ArchonClient } from '../archon-client';
 import { AgentStatusProvider } from '../providers/agent-status-provider';
 import { FindingsProvider } from '../providers/findings-provider';
+import { getApiKey, getApiUrl } from '../config';
 
 const MODES = [
     { label: 'Review', value: 'review', description: 'Audit existing codebase' },
@@ -26,31 +27,33 @@ export class RunReviewCommand {
     constructor(
         private client: ArchonClient,
         private agentStatus: AgentStatusProvider,
-        private findings: FindingsProvider
+        private findings: FindingsProvider,
+        private context: vscode.ExtensionContext
     ) {}
 
     async execute(defaultMode?: string): Promise<void> {
         const config = vscode.workspace.getConfiguration('archon');
-        if (!config.get<string>('apiKey')) {
-            const openSettings = 'Open Settings';
+        const apiKey = await getApiKey(this.context);
+        if (!apiKey) {
+            const action = 'Configure API Key';
             const result = await vscode.window.showErrorMessage(
-                'ARCHON API key not set. Configure it in settings.',
-                openSettings
+                'ARCHON API key not set. Configure it securely before running a review.',
+                action
             );
-            if (result === openSettings) {
-                vscode.commands.executeCommand('workbench.action.openSettings', 'archon.apiKey');
+            if (result === action) {
+                await vscode.commands.executeCommand('archon.configure');
             }
             return;
         }
 
-        // Get repo URL from workspace
+        this.client.updateConfig(getApiUrl(config), apiKey);
+
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders || workspaceFolders.length === 0) {
             vscode.window.showErrorMessage('No workspace folder open. Open a project first.');
             return;
         }
 
-        // Try to get Git remote URL
         let repoUrl: string | undefined;
         try {
             const gitExtension = vscode.extensions.getExtension('vscode.git');
@@ -59,7 +62,7 @@ export class RunReviewCommand {
                 const repo = git.repositories[0];
                 if (repo) {
                     const remotes = repo.state.remotes;
-                    const origin = remotes.find((r: any) => r.name === 'origin');
+                    const origin = remotes.find((remote: { name: string }) => remote.name === 'origin');
                     if (origin && origin.fetchUrl) {
                         repoUrl = origin.fetchUrl;
                     }
@@ -82,9 +85,10 @@ export class RunReviewCommand {
             });
         }
 
-        if (!repoUrl) { return; }
+        if (!repoUrl) {
+            return;
+        }
 
-        // Select mode
         const mode = defaultMode || config.get<string>('defaultMode', 'review');
         const hitlMode = config.get<string>('hitlMode', 'balanced');
 
@@ -96,11 +100,9 @@ export class RunReviewCommand {
             },
             async (progress, token) => {
                 try {
-                    // Start review
                     progress.report({ message: 'Starting review...' });
                     this.currentJobId = await this.client.startReview(repoUrl!, mode, hitlMode);
 
-                    // Stream progress
                     for await (const agentProgress of this.client.streamProgress(this.currentJobId)) {
                         if (token.isCancellationRequested) {
                             this.client.cancelStream();
@@ -113,20 +115,16 @@ export class RunReviewCommand {
                             message: `${agentProgress.agent}: ${agentProgress.status}`,
                             increment: pct / 6,
                         });
-
                         this.agentStatus.updateAgent(agentProgress);
                     }
 
-                    // Get results
                     progress.report({ message: 'Fetching results...' });
                     const review = await this.client.getReview(this.currentJobId);
                     this.findings.setFindings(review.findings);
 
-                    // Show summary
                     const totalFindings = review.findings.length;
-                    const critical = review.findings.filter(f => f.severity === 'CRITICAL').length;
-                    const high = review.findings.filter(f => f.severity === 'HIGH').length;
-
+                    const critical = review.findings.filter(finding => finding.severity === 'CRITICAL').length;
+                    const high = review.findings.filter(finding => finding.severity === 'HIGH').length;
                     const msg = `Review complete: ${totalFindings} findings (${critical} critical, ${high} high)`;
                     const action = await vscode.window.showInformationMessage(
                         msg,
@@ -156,7 +154,9 @@ export class RunReviewCommand {
             defaultUri: vscode.Uri.file(`archon-review-${jobId}.zip`),
             filters: { 'ZIP Archive': ['zip'] },
         });
-        if (!uri) { return; }
+        if (!uri) {
+            return;
+        }
 
         try {
             const buffer = await this.client.downloadPackage(jobId);

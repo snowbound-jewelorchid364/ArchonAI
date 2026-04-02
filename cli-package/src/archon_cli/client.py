@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Generator
+import time
+from typing import Any
 
 import httpx
 
@@ -43,16 +44,14 @@ class ArchonAPIClient:
         try:
             response = self._client.request(method, path, **kwargs)
         except httpx.ConnectError as exc:
-            raise ArchonConnectionError(
-                f"Unable to connect to ARCHON API at {self.api_url}. Check --api-url or your network."
-            ) from exc
+            raise ArchonConnectionError("Connection failed") from exc
         except httpx.TimeoutException as exc:
             raise ArchonConnectionError(f"ARCHON API request timed out for {self.api_url}.") from exc
         except httpx.HTTPError as exc:
             raise ArchonConnectionError(f"ARCHON API request failed: {exc}") from exc
 
         if response.status_code == 401:
-            detail = _response_detail(response) or "Authentication failed."
+            detail = _response_detail(response) or "Token expired"
             raise ArchonAuthError(detail)
 
         try:
@@ -68,43 +67,26 @@ class ArchonAPIClient:
         response = self._request("GET", "/api/v1/auth/me")
         return response.json()
 
-    def start_review(self, repo_url: str, mode: str, hitl_mode: str) -> str:
+    def start_review(self, repo_url: str, mode: str, hitl_mode: str) -> dict[str, str]:
         response = self._request(
             "POST",
             "/api/v1/reviews",
             json={"repo_url": repo_url, "mode": mode, "hitl_mode": hitl_mode},
         )
-        return response.json()["job_id"]
+        data = response.json()
+        return {
+            "review_id": data["review_id"],
+            "job_id": data["job_id"],
+        }
 
-    def stream_progress(self, job_id: str) -> Generator[dict[str, Any], None, None]:
-        try:
-            with httpx.Client(
-                base_url=self.api_url,
-                headers=self._headers(self.api_key),
-                timeout=httpx.Timeout(None),
-            ) as stream_client:
-                with stream_client.stream("GET", f"/api/v1/jobs/{job_id}/stream") as response:
-                    if response.status_code == 401:
-                        raise ArchonAuthError(_response_detail(response) or "Authentication failed.")
-                    response.raise_for_status()
-                    for line in response.iter_lines():
-                        if not line or not line.startswith("data: "):
-                            continue
-                        data = line[6:].strip()
-                        if data == "[DONE]":
-                            return
-                        try:
-                            yield json.loads(data)
-                        except json.JSONDecodeError:
-                            continue
-        except httpx.ConnectError as exc:
-            raise ArchonConnectionError(
-                f"Unable to connect to ARCHON API at {self.api_url}. Check --api-url or your network."
-            ) from exc
-        except httpx.TimeoutException as exc:
-            raise ArchonConnectionError(f"ARCHON API request timed out for {self.api_url}.") from exc
-        except httpx.HTTPStatusError as exc:
-            raise ArchonAPIError(f"ARCHON API returned {exc.response.status_code} while streaming progress.") from exc
+    def poll_review(self, review_id: str, timeout_seconds: int = 300, interval_seconds: int = 5) -> dict[str, Any]:
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            review = self.get_review(review_id)
+            if review.get("status") in {"COMPLETED", "FAILED", "PARTIAL"}:
+                return review
+            time.sleep(interval_seconds)
+        raise ArchonAPIError("Review polling timed out")
 
     def get_review(self, review_id: str) -> dict[str, Any]:
         response = self._request("GET", f"/api/v1/reviews/{review_id}")

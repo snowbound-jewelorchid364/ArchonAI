@@ -4,7 +4,6 @@ from __future__ import annotations
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from archon_cli.client import (
@@ -14,6 +13,7 @@ from archon_cli.client import (
     ArchonConnectionError,
 )
 from archon_cli.config import clear_config, get_config, save_config
+from archon_cli.sse_display import stream_review_progress
 
 console = Console()
 
@@ -48,7 +48,6 @@ def cli() -> None:
 @click.option("--api-url", prompt="ARCHON API URL", default="https://api.archon.dev")
 @click.option("--api-key", prompt="ARCHON API Key / Clerk session token", hide_input=True)
 def login(api_url: str, api_key: str) -> None:
-    """Validate and save CLI credentials."""
     client = ArchonAPIClient(api_url, api_key)
     try:
         user = client.validate_token()
@@ -57,22 +56,17 @@ def login(api_url: str, api_key: str) -> None:
         raise SystemExit(1) from exc
 
     save_config(api_url, api_key)
-    console.print(
-        f"[green]Logged in.[/green] {user.get('email', 'unknown')} "
-        f"({user.get('plan', 'starter')})"
-    )
+    console.print(f"[green]Logged in.[/green] {user.get('email', 'unknown')} ({user.get('plan', 'starter')})")
 
 
 @cli.command()
 def logout() -> None:
-    """Clear saved CLI credentials."""
     clear_config()
     console.print("[green]Logged out.[/green]")
 
 
 @cli.command()
 def status() -> None:
-    """Show current CLI authentication status."""
     config = get_config()
     if not config.api_key:
         console.print("[yellow]Not logged in.[/yellow] Run [bold]archon login[/bold].")
@@ -95,72 +89,51 @@ def status() -> None:
     console.print(table)
 
 
-@cli.command()
+@cli.command(name='run')
 @click.argument("repo_url")
 @click.option("--mode", "-m", type=click.Choice(MODES), default="review", help="Review mode")
 @click.option("--hitl", type=click.Choice(["autopilot", "balanced", "supervised"]), default="balanced", help="Human-in-the-loop mode")
 @click.option("--output", "-o", type=click.Path(), default=None, help="Output directory for the review package")
 @click.option("--format", "fmt", type=click.Choice(["markdown", "zip", "both"]), default="both", help="Output format")
-def run(repo_url: str, mode: str, hitl: str, output: str | None, fmt: str) -> None:
-    """Run an architecture review on a GitHub repository."""
+@click.option("--no-stream", is_flag=True, help="Skip SSE live display and poll for completion instead")
+def run(repo_url: str, mode: str, hitl: str, output: str | None, fmt: str, no_stream: bool) -> None:
     config = get_config()
     if not config.api_key:
         console.print("[red]No API key configured.[/red] Run [bold]archon login[/bold] or [bold]archon configure[/bold].")
         raise SystemExit(1)
 
     client = ArchonAPIClient(config.api_url, config.api_key)
-
     console.print(
         Panel(
-            f"[bold blue]ARCHON[/bold blue] - {mode.replace('_', ' ').title()}\n"
-            f"Repo: {repo_url}\n"
-            f"HITL: {hitl}",
+            f"[bold blue]ARCHON[/bold blue] - {mode.replace('_', ' ').title()}\nRepo: {repo_url}\nHITL: {hitl}",
             title="Starting Review",
             border_style="blue",
         )
     )
 
     try:
-        job_id = client.start_review(repo_url, mode, hitl)
-        console.print(f"[green]Review started:[/green] job_id={job_id}")
+        review_ref = client.start_review(repo_url, mode, hitl)
+        review_id = review_ref["review_id"]
+        job_id = review_ref["job_id"]
+        console.print(f"[green]Review started:[/green] review_id={review_id} job_id={job_id}")
 
-        agents_status: dict[str, str] = {}
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task("Waiting for agents...", total=6)
+        if no_stream:
+            review = client.poll_review(review_id)
+        else:
+            stream_review_progress(f"{config.api_url.rstrip('/')}/api/v1/jobs/{job_id}/stream", config.api_key)
+            review = client.get_review(review_id)
 
-            for event in client.stream_progress(job_id):
-                agent = event.get("agent", "unknown")
-                status_value = event.get("status", "unknown")
-                agents_status[agent] = status_value
-
-                completed = sum(1 for value in agents_status.values() if value == "complete")
-                progress.update(task, completed=completed, description=f"{agent}: {status_value}")
-
-                if status_value == "complete":
-                    findings = event.get("findingCount", 0)
-                    console.print(f"  [green]✓[/green] {agent}: {findings} findings")
-                elif status_value == "failed":
-                    console.print(f"  [red]✗[/red] {agent}: failed")
-
-        review = client.get_review(job_id)
         findings = review.get("findings", [])
-
         console.print()
         _print_summary(findings)
 
         output_dir = output or "."
         if fmt in ("zip", "both"):
-            zip_path = client.download_package(job_id, output_dir)
+            zip_path = client.download_package(review_id, output_dir)
             console.print(f"\n[green]Package saved:[/green] {zip_path}")
-
         if fmt in ("markdown", "both"):
-            md_path = client.download_markdown(job_id, output_dir)
+            md_path = client.download_markdown(review_id, output_dir)
             console.print(f"[green]Markdown saved:[/green] {md_path}")
-
     except KeyboardInterrupt:
         console.print("\n[yellow]Review cancelled.[/yellow]")
         raise SystemExit(1)
@@ -171,12 +144,10 @@ def run(repo_url: str, mode: str, hitl: str, output: str | None, fmt: str) -> No
 
 @cli.command()
 def modes() -> None:
-    """List all available review modes."""
     table = Table(title="ARCHON Review Modes")
     table.add_column("#", style="dim")
     table.add_column("Mode", style="bold")
     table.add_column("Description")
-
     descriptions = {
         "review": "Audit existing codebase",
         "design": "New product from scratch",
@@ -193,10 +164,8 @@ def modes() -> None:
         "onboarding_accelerator": "New CTO / senior hire",
         "sunset_planner": "Decommission a service",
     }
-
     for index, mode_name in enumerate(MODES, 1):
         table.add_row(str(index), mode_name, descriptions.get(mode_name, ""))
-
     console.print(table)
 
 
@@ -204,14 +173,12 @@ def modes() -> None:
 @click.option("--api-url", prompt="ARCHON API URL", default="https://api.archon.dev")
 @click.option("--api-key", prompt="ARCHON API Key", hide_input=True)
 def configure(api_url: str, api_key: str) -> None:
-    """Configure ARCHON CLI credentials without validation."""
     save_config(api_url, api_key)
     console.print("[green]Configuration saved.[/green]")
 
 
 @cli.command()
 def history() -> None:
-    """Show review history."""
     config = get_config()
     if not config.api_key:
         console.print("[red]No API key configured.[/red] Run [bold]archon login[/bold] or [bold]archon configure[/bold].")
@@ -230,7 +197,6 @@ def history() -> None:
     table.add_column("Status")
     table.add_column("Findings")
     table.add_column("Date")
-
     for review in reviews:
         table.add_row(
             review["id"][:8],
@@ -239,7 +205,6 @@ def history() -> None:
             str(len(review.get("findings", []))),
             review.get("completedAt", "-"),
         )
-
     console.print(table)
 
 
@@ -252,12 +217,10 @@ def _print_summary(findings: list[dict[str, object]]) -> None:
     table = Table(title=f"Review Complete - {len(findings)} Findings")
     table.add_column("Severity", style="bold")
     table.add_column("Count")
-
     colors = {"CRITICAL": "red", "HIGH": "yellow", "MEDIUM": "cyan", "LOW": "green", "INFO": "dim"}
     for severity, count in severity_counts.items():
         if count > 0:
             table.add_row(f"[{colors[severity]}]{severity}[/{colors[severity]}]", str(count))
-
     console.print(table)
 
 

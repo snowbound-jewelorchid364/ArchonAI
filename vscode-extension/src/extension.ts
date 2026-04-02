@@ -6,17 +6,14 @@ import { AgentStatusProvider } from './providers/agent-status-provider';
 import { FindingsProvider } from './providers/findings-provider';
 import { HistoryProvider } from './providers/history-provider';
 import { FindingsWebviewProvider } from './views/findings-webview';
+import { configureApiKey, loadClientConfig } from './config';
 
 let client: ArchonClient;
 
-export function activate(context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration('archon');
-    client = new ArchonClient(
-        config.get<string>('apiUrl', 'https://api.archon.dev'),
-        config.get<string>('apiKey', '')
-    );
+export async function activate(context: vscode.ExtensionContext) {
+    const { apiUrl, apiKey } = await loadClientConfig(context);
+    client = new ArchonClient(apiUrl, apiKey);
 
-    // Tree view providers
     const agentStatusProvider = new AgentStatusProvider(client);
     const findingsProvider = new FindingsProvider(client);
     const historyProvider = new HistoryProvider(client);
@@ -25,14 +22,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider('archon-findings', findingsProvider);
     vscode.window.registerTreeDataProvider('archon-history', historyProvider);
 
-    // Webview
     const findingsWebview = new FindingsWebviewProvider(context.extensionUri, client);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider('archon-findings-detail', findingsWebview)
     );
 
-    // Commands
-    const runReview = new RunReviewCommand(client, agentStatusProvider, findingsProvider);
+    const runReview = new RunReviewCommand(client, agentStatusProvider, findingsProvider, context);
     const selectMode = new SelectModeCommand();
 
     context.subscriptions.push(
@@ -43,10 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('archon.cancelReview', () => runReview.cancel()),
         vscode.commands.registerCommand('archon.openSettings', () => {
             vscode.commands.executeCommand('workbench.action.openSettings', 'archon');
-        })
+        }),
+        vscode.commands.registerCommand('archon.configure', () => configureApiKey(context))
     );
 
-    // Status bar
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBar.text = 'ARCHON';
     statusBar.command = 'archon.runReview';
@@ -54,15 +49,11 @@ export function activate(context: vscode.ExtensionContext) {
     statusBar.show();
     context.subscriptions.push(statusBar);
 
-    // Config change listener
     context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(e => {
+        vscode.workspace.onDidChangeConfiguration(async e => {
             if (e.affectsConfiguration('archon')) {
-                const newConfig = vscode.workspace.getConfiguration('archon');
-                client.updateConfig(
-                    newConfig.get<string>('apiUrl', 'https://api.archon.dev'),
-                    newConfig.get<string>('apiKey', '')
-                );
+                const nextConfig = await loadClientConfig(context);
+                client.updateConfig(nextConfig.apiUrl, nextConfig.apiKey);
             }
         })
     );
