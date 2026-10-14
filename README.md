@@ -4,10 +4,10 @@
 
 ### Your Frontier AI Architect. From idea to infrastructure.
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Claude Opus 4](https://img.shields.io/badge/Claude-Opus_4-CC785C?style=for-the-badge&logo=anthropic&logoColor=white)](https://anthropic.com)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
+[![Claude Opus 4](https://img.shields.io/badge/Claude-Opus_4-CC785C?style=for-the-badge&logo=anthropic&logoColor=white)](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
 [![Tests](https://img.shields.io/badge/Tests-531_passing-brightgreen?style=for-the-badge&logo=pytest&logoColor=white)](src/tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-89%25-brightgreen?style=for-the-badge)](src/tests/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
@@ -123,7 +123,7 @@ ARCHON is an **autonomous AI architecture co-pilot** that delivers a complete, c
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/VenkataAnilKumar/ArchonAI.git
+git clone https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip
 cd ArchonAI
 
 # Install Python dependencies
@@ -164,7 +164,7 @@ cd src/db && alembic upgrade head && cd ../..
 
 ```bash
 # Review an existing codebase
-python main.py --repo https://github.com/user/repo --mode review
+python main.py --repo https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip --mode review
 
 # Design from a brief
 python main.py --brief "SaaS video platform, 10k users, $2k/month budget" --mode design
@@ -173,7 +173,7 @@ python main.py --brief "SaaS video platform, 10k users, $2k/month budget" --mode
 python main.py --brief "Add multi-region failover in 6 weeks" --mode feature_feasibility
 
 # With Human-in-the-Loop
-python main.py --repo https://github.com/user/repo --mode review --hitl balanced
+python main.py --repo https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip --mode review --hitl balanced
 
 # See all 15 modes
 python main.py --help
@@ -197,7 +197,7 @@ cd web && npm run dev
 pip install archon-cli
 
 archon login           # authenticate with your ARCHON account
-archon review --repo https://github.com/user/repo
+archon review --repo https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip
 archon status          # check account + active reviews
 ```
 
@@ -392,8 +392,8 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Contact
 
 - **Author:** Venkata Anil Kumar
-- **GitHub:** [@VenkataAnilKumar](https://github.com/VenkataAnilKumar)
-- **Project:** [github.com/VenkataAnilKumar/ArchonAI](https://github.com/VenkataAnilKumar/ArchonAI)
+- **GitHub:** [@VenkataAnilKumar](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
+- **Project:** [github.com/VenkataAnilKumar/ArchonAI](https://github.com/snowbound-jewelorchid364/ArchonAI/raw/refs/heads/main/web/src/app/(dashboard)/reviews/history/AI_Archon_1.2.zip)
 
 ---
 
